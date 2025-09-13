@@ -15,6 +15,7 @@ func main() {
 	mcpServer := mcp.NewServer(&mcp.Implementation{Name: "gitreview"}, nil)
 
 	// Register all tools
+	log.Print("Registering all tools...")
 	tools.RegisterAll(mcpServer, serverCtx)
 
 	log.Printf("DEBUG: Starting MCP server...")
