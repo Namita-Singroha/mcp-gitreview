@@ -79,30 +79,3 @@ Example config (Claude Desktop / MCP client):
 2. LLM realizes no repo is set → calls `set_repo`  
 3. Server stores it → responds: *“Repo set to modelcontextprotocol/go-sdk”*  
 4. LLM calls `list_branches` → gets actual branch names.  
-
----
-
-## 🔒 Security Notes
-
-- GitHub tokens are stored in memory only, with a 1-hour TTL by default.  
-- No tokens or repo data are persisted to disk.  
-
----
-
-## 💡 Why This Project?
-
-I built this project to:  
-- Explore **practical MCP server design**  
-- Learn about **tool orchestration for LLMs**  
-- Make GitHub exploration conversational for agents  
-
-It’s a solid **portfolio piece** to showcase Go backend skills, protocol integration, and secure API handling.
-
----
-
-## 🚀 Future Work
-
-- Add support for listing / searching issues  
-- Enable creating PRs and issues through tools  
-- Add streaming transport (SSE / WebSockets)  
-- Richer error handling and retries  
