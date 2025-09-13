@@ -1,8 +1,8 @@
 # MCP GitReview Server
 
-🚀 A lightweight [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server for exploring GitHub repositories directly through LLMs.  
+🚀 A lightweight Model Context Protocol (MCP) server for exploring GitHub repositories over stdio.  
 
-This project lets an AI agent interact with GitHub repos in a structured way — listing commits, branches, PRs, and repo metadata — without exposing raw `git` or GitHub API complexity.  
+This project enables AI agents (e.g., Claude Desktop) to interact with GitHub repos in a structured way — listing commits, branches, PRs, and repo metadata — without exposing raw git or GitHub API complexity.
 
 ---
 
