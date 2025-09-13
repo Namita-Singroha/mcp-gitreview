@@ -55,23 +55,16 @@ Example config (Claude Desktop / MCP client):
 
 👉 No default repo is required. If a tool is called without a repo set, the server will politely ask the LLM to set one using `set_repo`.
 
-### 3. Set a repo
-```json
-{
-  "tool": "set_repo",
-  "arguments": { "repo": "modelcontextprotocol/go-sdk" }
-}
-```
+📸 Demo: Claude Desktop interacting with the MCP server by invoking MCP Tools. 
+The user asks in natural language, and the server communicates back in simple English, describing repository features clearly.
 
-### 4. (Optional) Authenticate for private repos
-```json
-{
-  "tool": "set_github_token",
-  "arguments": { "token": "ghp_XXXXXXXXXXXXXXXX" }
-}
-```
+<img width="1269" height="766" alt="Screenshot 2025-09-13 at 7 34 59 PM" src="https://github.com/user-attachments/assets/7c7f46d6-f22d-4f73-864c-83c6d5be3583" />
+<img width="1270" height="762" alt="Screenshot 2025-09-13 at 7 35 57 PM" src="https://github.com/user-attachments/assets/a7636462-6464-4b2c-ba8a-4ed7da1f9aef" />
+<img width="1317" height="762" alt="Screenshot 2025-09-13 at 7 36 35 PM" src="https://github.com/user-attachments/assets/3e68c0f3-31d1-4624-a78c-35e8a83c81ed" />
+<img width="1319" height="762" alt="Screenshot 2025-09-13 at 7 36 50 PM" src="https://github.com/user-attachments/assets/a68cc93a-3a16-4541-b610-a3a03a0ee853" />
 
 ---
+
 
 ## 🤖 Example Flow
 
