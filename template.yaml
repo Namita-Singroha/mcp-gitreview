@@ -3,23 +3,51 @@ kind: Component
 metadata:
   name: nvidia-rag-blueprint
   title: NVIDIA RAG Blueprint on IBM Fusion
-  description: Deploy a Retrieval-Augmented Generation (RAG) application on IBM Fusion HCI using NVIDIA AI Blueprints
+  description: |
+    Deploy a Retrieval-Augmented Generation (RAG) application on IBM Fusion HCI 
+    using NVIDIA AI Blueprints. This blueprint provides a complete guide for 
+    deploying production-ready RAG applications with GPU acceleration.
   tags:
     - nvidia
     - rag
     - ai
     - blueprint
+    - fusion
+    - gpu
+    - llm
+  annotations:
+    # TechDocs configuration - points to your markdown documentation
+    backstage.io/techdocs-ref: url:https://github.com/IBM/storage-fusion/tree/master/AI/NVIDIA%20Blueprints/NVIDIA%20RAG
+    
+    # Links to related resources
+    github.com/project-slug: IBM/storage-fusion
+    
   links:
     - url: https://community.ibm.com/community/user/blogs/namita-singroha/2026/02/03/deploying-nvidia-rag-on-fusion-hci
-      title: TechExchange Blog
+      title: TechExchange Blog Post
       icon: article
     - url: https://github.com/IBM/storage-fusion/blob/master/AI/NVIDIA%20Blueprints/NVIDIA%20RAG/Fusion_NVIDIA_RAG_Guide.md
       title: IBM Fusion Deployment Guide
-      icon: github
+      icon: docs
     - url: https://github.com/NVIDIA-AI-Blueprints/rag/blob/main/docs/deploy-helm.md
       title: NVIDIA Official Guide
       icon: launch
+    - url: https://www.nvidia.com/en-us/ai-data-science/ai-workflows/
+      title: NVIDIA AI Blueprints
+      icon: dashboard
 spec:
-  type: nvidia-blueprint
-  lifecycle: available
+  type: blueprint
+  lifecycle: production
   owner: fusion-team
+  system: fusion-ai-platform
+  
+  # Provide context about what this blueprint offers
+  providesApis: []
+  consumesApis: []
+  
+  # Dependencies and requirements
+  dependsOn:
+    - resource:default/nvidia-gpu
+    - resource:default/fusion-storage
+
+# Made with Bob
