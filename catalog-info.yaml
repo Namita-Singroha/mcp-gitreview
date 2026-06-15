@@ -1,0 +1,25 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: nvidia-rag-blueprint
+  title: NVIDIA RAG Blueprint on IBM Fusion
+  description: Deploy a Retrieval-Augmented Generation (RAG) application on IBM Fusion HCI using NVIDIA AI Blueprints
+  tags:
+    - nvidia
+    - rag
+    - ai
+    - blueprint
+  links:
+    - url: https://community.ibm.com/community/user/blogs/namita-singroha/2026/02/03/deploying-nvidia-rag-on-fusion-hci
+      title: TechExchange Blog
+      icon: article
+    - url: https://github.com/IBM/storage-fusion/blob/master/AI/NVIDIA%20Blueprints/NVIDIA%20RAG/Fusion_NVIDIA_RAG_Guide.md
+      title: IBM Fusion Deployment Guide
+      icon: github
+    - url: https://github.com/NVIDIA-AI-Blueprints/rag/blob/main/docs/deploy-helm.md
+      title: NVIDIA Official Guide
+      icon: launch
+spec:
+  type: nvidia-blueprint
+  lifecycle: available
+  owner: fusion-team
