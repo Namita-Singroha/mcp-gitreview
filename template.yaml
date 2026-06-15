@@ -17,7 +17,7 @@ metadata:
     - llm
   annotations:
     # TechDocs configuration - points to your markdown documentation
-    backstage.io/techdocs-ref: url:https://github.com/IBM/storage-fusion/tree/master/AI/NVIDIA%20Blueprints/NVIDIA%20RAG
+    backstage.io/techdocs-ref: dir:.
     
     # Links to related resources
     github.com/project-slug: IBM/storage-fusion
