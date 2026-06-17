@@ -40,9 +40,6 @@ metadata:
     - url: https://github.com/NVIDIA-AI-Blueprints/rag/blob/main/docs/deploy-helm.md
       title: NVIDIA Documentation
       icon: launch
-    - url: /catalog?filters[kind]=component&filters[type]=blueprint
-      title: Explore other blueprints
-      icon: dashboard
 spec:
   type: blueprint
   lifecycle: production
