@@ -4,9 +4,14 @@ metadata:
   name: nvidia-rag-blueprint
   title: NVIDIA RAG Blueprint on IBM Fusion
   description: |
-    Deploy a Retrieval-Augmented Generation (RAG) application on IBM Fusion HCI 
-    using NVIDIA AI Blueprints. This blueprint provides a complete guide for 
-    deploying production-ready RAG applications with GPU acceleration.
+    Deploy a Retrieval-Augmented Generation (RAG) blueprint on IBM Fusion HCI. 
+    It enables users to ask questions and get accurate answers grounded in their own documents instead of relying on generic LLM guesses.
+    
+    Key features - 
+    • Multi-modal document intelligence: OCR, PDF layout parsing, and table/chart extraction for complex documents
+    • Grounded generation: answers come with context and citations via NVIDIA NIM, so responses are traceable
+    • Converged infrastructure: compute, GPU, and storage unified under a single OpenShift-managed system
+    • Deploy on OpenShift with GPU acceleration
   tags:
     - nvidia
     - rag
@@ -24,16 +29,19 @@ metadata:
     
   links:
     - url: https://community.ibm.com/community/user/blogs/namita-singroha/2026/02/03/deploying-nvidia-rag-on-fusion-hci
-      title: TechExchange Blog Post
+      title: Read on IBM Tech Exchange
       icon: article
+    - url: https://ibm.github.io/storage-fusion/fusion-ai/resources/
+      title: View on Fusion Tech Community
+      icon: web
     - url: https://github.com/IBM/storage-fusion/blob/master/AI/NVIDIA%20Blueprints/NVIDIA%20RAG/Fusion_NVIDIA_RAG_Guide.md
-      title: IBM Fusion Deployment Guide
+      title: Complete deployment guide on GitHub
       icon: docs
     - url: https://github.com/NVIDIA-AI-Blueprints/rag/blob/main/docs/deploy-helm.md
-      title: NVIDIA Official Guide
+      title: NVIDIA Documentation
       icon: launch
-    - url: https://www.nvidia.com/en-us/ai-data-science/ai-workflows/
-      title: NVIDIA AI Blueprints
+    - url: /catalog?filters[kind]=component&filters[type]=blueprint
+      title: Explore other blueprints
       icon: dashboard
 spec:
   type: blueprint
