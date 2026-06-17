@@ -1,23 +1,32 @@
 site_name: NVIDIA RAG Blueprint on IBM Fusion
-site_description: Deploy Retrieval-Augmented Generation applications on IBM Fusion HCI
+site_description: Build AI applications that answer questions using your company documents
+site_author: IBM Fusion Team
 
 # Point to the IBM storage-fusion repo for documentation
 repo_url: https://github.com/IBM/storage-fusion
 repo_name: IBM/storage-fusion
 
-# Use docs directory
+# Documentation source
 docs_dir: docs
 
 nav:
   - Home: index.md
 
+# Theme
 theme:
   name: material
   palette:
     primary: indigo
-    accent: indigo
+    accent: blue
 
+# Required for Backstage
 plugins:
   - techdocs-core
 
-# Made with Bob
+# Safe markdown extensions
+markdown_extensions:
+  - admonition
+  - tables
+  - toc:
+      permalink: true
+
