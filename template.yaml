@@ -2,16 +2,12 @@ apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
   name: nvidia-rag-blueprint
-  title: NVIDIA RAG Blueprint on IBM Fusion
+  title: Guide to deploy NVIDIA RAG Blueprint on IBM Fusion
   description: |
     Deploy a Retrieval-Augmented Generation (RAG) blueprint on IBM Fusion HCI. 
     It enables users to ask questions and get accurate answers grounded in their own documents instead of relying on generic LLM guesses.
     
-    Key features - 
-    • Multi-modal document intelligence: OCR, PDF layout parsing, and table/chart extraction for complex documents
-    • Grounded generation: answers come with context and citations via NVIDIA NIM, so responses are traceable
-    • Converged infrastructure: compute, GPU, and storage unified under a single OpenShift-managed system
-    • Deploy on OpenShift with GPU acceleration
+    Key features include multi-modal document intelligence, processing complex documents through OCR, PDF layout parsing, and table or chart extraction. Answers are grounded with context and citations via NVIDIA NIM, keeping responses traceable. Infrastructure is converged, with compute, GPU, and storage unified under a single OpenShift-managed system. Performance is production-ready, with NVMe-backed storage delivering the throughput RAG workloads need.
   tags:
     - nvidia
     - rag
