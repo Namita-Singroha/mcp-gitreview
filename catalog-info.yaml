@@ -37,7 +37,7 @@ metadata:
     - url: https://ibm.github.io/storage-fusion/fusion-ai/overview/
       title: Fusion Tech Community
       icon: group
-    - url: https://github.com/IBM/storage-fusion/tree/main/AI/quickstarts
+    - url: https://github.com/IBM/storage-fusion/tree/master/AI/quickstarts
       title: AI Quickstarts
       icon: catalog
 spec:
