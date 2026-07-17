@@ -1,0 +1,186 @@
+openapi: "3.0.3"
+info:
+  title: Procurement Assistant Agent Tools
+  version: "1.0.0"
+  description: >
+    Tools exposed to watsonx Orchestrate agents for the IBM Hardware
+    Procurement Assistant. Only the endpoints relevant to agent actions
+    are included here.
+
+servers:
+  - url: https://placeholder.backend.com
+
+paths:
+
+  /slack/send:
+    post:
+      operationId: send_slack_message
+      description: >
+        Send a Slack message to the #procurement-alerts channel on behalf of
+        the Procurement Assistant. Use this whenever you need to notify the
+        team about a procurement issue — stalls, approvals, status updates,
+        or follow-up reminders.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [issue_number, channel, message]
+              properties:
+                issue_number:
+                  type: integer
+                  description: The procurement GitHub issue number this message relates to.
+                channel:
+                  type: string
+                  description: Slack channel ID or name, e.g. C0BHRNS090D or #procurement-alerts.
+                  default: "C0BHRNS090D"
+                message:
+                  type: string
+                  description: >
+                    The message text to post. Use Slack mrkdwn formatting.
+                    Always include the issue number and a clear action or status.
+      responses:
+        "200":
+          description: Message sent successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  ts:
+                    type: string
+                  channel:
+                    type: string
+
+  /github/issues/{issue_number}:
+    get:
+      operationId: get_issue_details
+      description: >
+        Fetch the full details of a procurement GitHub issue including its
+        current lifecycle state (stored as labels), assignees, title, body,
+        and comment count. Call this first before deciding what action to take.
+      parameters:
+        - name: issue_number
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: The GitHub issue number.
+      responses:
+        "200":
+          description: Issue details returned successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  number:
+                    type: integer
+                  title:
+                    type: string
+                  body:
+                    type: string
+                  state:
+                    type: string
+                  labels:
+                    type: array
+                    items:
+                      type: object
+                  assignees:
+                    type: array
+                    items:
+                      type: object
+                  updated_at:
+                    type: string
+
+  /github/issues/{issue_number}/comments:
+    post:
+      operationId: post_issue_comment
+      description: >
+        Post a comment on a procurement GitHub issue to record an action,
+        status change, or notification. Always post a comment when you
+        send an email or Slack message so there is a full audit trail.
+      parameters:
+        - name: issue_number
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: The GitHub issue number.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [body]
+              properties:
+                body:
+                  type: string
+                  description: >
+                    The markdown comment body. Include what action was taken,
+                    who was notified, and a timestamp reference.
+      responses:
+        "200":
+          description: Comment posted successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  body:
+                    type: string
+
+  /github/issues/{issue_number}/lifecycle:
+    post:
+      operationId: transition_lifecycle
+      description: >
+        Transition a procurement issue to a new lifecycle state by updating
+        its GitHub label. Valid states are: lifecycle/untriaged,
+        lifecycle/in-progress, lifecycle/on-hold, lifecycle/approved,
+        lifecycle/ordered, lifecycle/closed.
+        Call this when an email reply, approval, or stall resolution
+        requires a state change.
+      parameters:
+        - name: issue_number
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: The GitHub issue number.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [state]
+              properties:
+                state:
+                  type: string
+                  description: >
+                    The new lifecycle state label, e.g. lifecycle/approved.
+                  enum:
+                    - lifecycle/untriaged
+                    - lifecycle/in-progress
+                    - lifecycle/on-hold
+                    - lifecycle/approved
+                    - lifecycle/ordered
+                    - lifecycle/closed
+      responses:
+        "200":
+          description: Lifecycle state updated successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  issue_number:
+                    type: integer
+                  new_state:
+                    type: string
