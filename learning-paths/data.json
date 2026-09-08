@@ -1,0 +1,117 @@
+[
+  {
+    "label": "Getting Started with WatsonX Orchestrate & Creating Agents",
+    "icon": "Red Hat",
+    "description": "Learn how to get started with IBM WatsonX Orchestrate on Fusion, create your first AI agent, connect tools and skills, and deploy agents into production workflows.",
+    "tags": ["wxo", "agents", "ai", "fusion"],
+    "order": 1,
+    "paths": [
+      {
+        "id": "fusion-wxo-intro",
+        "label": "Introduction to WatsonX Orchestrate on Fusion",
+        "description": "Overview of WatsonX Orchestrate, its architecture, and how it integrates with the Fusion platform.",
+        "duration": "20 minutes",
+        "type": "documentation",
+        "url": "https://github.ibm.com/<org>/<repo>/blob/main/docs/wxo/intro.md"
+      },
+      {
+        "id": "fusion-wxo-first-agent",
+        "label": "Creating Your First AI Agent",
+        "description": "Step-by-step guide to building and deploying a custom AI agent using WatsonX Orchestrate on the Fusion Developer Hub.",
+        "duration": "45 minutes",
+        "type": "tutorial",
+        "url": "https://github.ibm.com/<org>/<repo>/blob/main/docs/wxo/first-agent.md"
+      },
+      {
+        "id": "fusion-wxo-skills",
+        "label": "Connecting Tools & Skills to Agents",
+        "description": "Learn how to extend your agent with pre-built skills, REST API tools, and custom integrations.",
+        "duration": "30 minutes",
+        "type": "tutorial",
+        "url": "https://github.ibm.com/<org>/<repo>/blob/main/docs/wxo/skills.md"
+      },
+      {
+        "id": "fusion-wxo-deploy",
+        "label": "Deploying Agents to Production",
+        "description": "Best practices for testing, versioning, and promoting agents to production on OpenShift AI via Fusion.",
+        "duration": "25 minutes",
+        "type": "documentation",
+        "url": "https://github.ibm.com/<org>/<repo>/blob/main/docs/wxo/deploy.md"
+      }
+    ]
+  },
+  {
+    "label": "Getting Started with Namespace-as-a-Service (NaaS)",
+    "icon": "OpenShift",
+    "description": "Understand how Namespace-as-a-Service works on Fusion, request and manage your own namespace, and configure RBAC and resource quotas.",
+    "tags": ["naas", "namespace", "openshift", "fusion"],
+    "order": 2,
+    "paths": [
+      {
+        "id": "fusion-naas-overview",
+        "label": "What is Namespace-as-a-Service?",
+        "description": "High-level overview of NaaS on Fusion: how namespaces are provisioned, governed, and managed on OpenShift.",
+        "duration": "15 minutes",
+        "type": "documentation",
+        "url": "https://github.ibm.com/<org>/<repo>/blob/main/docs/naas/overview.md"
+      },
+      {
+        "id": "fusion-naas-request",
+        "label": "Requesting a Namespace",
+        "description": "Walk through the self-service namespace request process using the Fusion Developer Hub catalog and GitOps templates.",
+        "duration": "20 minutes",
+        "type": "tutorial",
+        "url": "https://github.ibm.com/<org>/<repo>/blob/main/docs/naas/request.md"
+      },
+      {
+        "id": "fusion-naas-rbac",
+        "label": "Configuring RBAC & Resource Quotas",
+        "description": "Set up role-based access controls and resource quotas within your provisioned namespace.",
+        "duration": "25 minutes",
+        "type": "tutorial",
+        "url": "https://github.ibm.com/<org>/<repo>/blob/main/docs/naas/rbac.md"
+      },
+      {
+        "id": "fusion-naas-gitops",
+        "label": "Managing Namespaces with GitOps",
+        "description": "Use ArgoCD and the Fusion GitOps workflow to manage namespace lifecycle and configuration drift.",
+        "duration": "30 minutes",
+        "type": "tutorial",
+        "url": "https://github.ibm.com/<org>/<repo>/blob/main/docs/naas/gitops.md"
+      }
+    ]
+  },
+  {
+    "label": "Getting Started with Model-as-a-Service (MaaS)",
+    "icon": "OpenShift",
+    "description": "Learn how to consume and deploy AI models via the Fusion Model-as-a-Service offering, from model selection to inference endpoint usage.",
+    "tags": ["maas", "models", "inference", "ai", "fusion"],
+    "order": 3,
+    "paths": [
+      {
+        "id": "fusion-maas-overview",
+        "label": "Model-as-a-Service Overview",
+        "description": "Introduction to MaaS on Fusion: available models, service tiers, and how to access the model catalog.",
+        "duration": "15 minutes",
+        "type": "documentation",
+        "url": "https://github.ibm.com/<org>/<repo>/blob/main/docs/maas/overview.md"
+      },
+      {
+        "id": "fusion-maas-access",
+        "label": "Accessing a Model Endpoint",
+        "description": "Request access to a model, retrieve your API credentials, and make your first inference call.",
+        "duration": "20 minutes",
+        "type": "tutorial",
+        "url": "https://github.ibm.com/<org>/<repo>/blob/main/docs/maas/access.md"
+      },
+      {
+        "id": "fusion-maas-sizing",
+        "label": "Model Sizing & Resource Planning",
+        "description": "Understand GPU/CPU sizing requirements for different model families and plan resource allocation.",
+        "duration": "20 minutes",
+        "type": "documentation",
+        "url": "https://github.ibm.com/<org>/<repo>/blob/main/docs/maas/sizing.md"
+      }
+    ]
+  }
+]
