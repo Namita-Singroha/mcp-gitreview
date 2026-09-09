@@ -24,17 +24,17 @@
   {
     "label": "Building agents with the watsonx Orchestrate AI Builder",
     "description": "Describe the agent you want and let the AI Builder generate it from scratch, then refine it through conversation or by feeding back past interactions to adjust its behavior.",
-    "url": "https://developer.watson-orchestrate.ibm.com/ai_builder/creating_agent.md",
+    "url": "https://developer.watson-orchestrate.ibm.com/ai_builder/creating_agent",
     "paths": 1,
     "minutes": 25
   },
   {
     "label": "Running watsonx Orchestrate Developer Edition locally",
     "description": "Set up the local watsonx Orchestrate server and UI on your own machine, giving you a dedicated environment with its own API endpoints to build and test agents.",
-    "url": "https://developer.watson-orchestrate.ibm.com/developer_edition/wxOde_overview.md",
+    "url": "https://developer.watson-orchestrate.ibm.com/developer_edition/wxOde_overview",
     "paths": 1,
     "minutes": 30
-  },
+  }
   {
     "label": "Creating and building AI agents with the watsonx Orchestrate ADK",
     "description": "Install the watsonx Orchestrate Agent Development Kit and build agents using either the conversational AI Builder or declarative YAML definitions, including tools, connections, and knowledge bases.",
