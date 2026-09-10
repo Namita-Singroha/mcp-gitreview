@@ -1,0 +1,36 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: nvidia-aiq-blueprint
+  title: NVIDIA AI-Q Blueprint on IBM Fusion HCI
+  description: |
+    NVIDIA AI-Q is a production-ready research assistant that answers questions grounded in your own documents — not generic LLM guesses. It ingests PDFs, spreadsheets, and complex documents through OCR and layout parsing, indexes them into a GPU-accelerated vector store, and generates precise answers with source citations using NVIDIA NIM microservices.
+
+    What makes it different from a chatbot: AI-Q is a full multi-stage AI workflow. At query time it retrieves the most relevant document chunks, runs multi-hop reasoning to validate the answer, and returns a response with traceable citations. Teams use it for policy Q&A, technical documentation search, competitive research, and enterprise knowledge management.
+
+    On IBM Fusion HCI, AI-Q benefits from converged compute and storage — GPU nodes managed by the NVIDIA GPU Operator on Red Hat OpenShift, NVMe-backed Fusion storage delivering the throughput RAG indexing demands, and a unified platform where multiple AI blueprints (RAG, AI-Q, VSS) share the same cluster without interference. Deployment is fully automated via Helm and GitOps — no manual YAML editing, no cluster-specific scripts.
+
+    Prerequisites: IBM Fusion HCI 2.13+, Red Hat OpenShift 4.18+, NVIDIA GPU Operator, one or more A100 or H100 GPU nodes.
+  tags:
+    - nvidia
+    - blueprint
+    - fusion
+    - rag
+  annotations:
+    backstage.io/techdocs-ref: dir:.
+    github.com/project-slug: IBM/storage-fusion
+  links:
+    - url: https://community.ibm.com/community/user/blogs/namita-singroha/2026/02/15/unlocking-ai-powered-video-analytics-on-ibm-fusion
+      title: Read the IBM Tech Exchange Blog
+      icon: article
+    - url: https://ibm.github.io/storage-fusion/fusion-ai/resources/
+      title: Explore on Fusion Tech Community
+      icon: web
+    - url: https://build.nvidia.com/nvidia/aiq
+      title: Explore on NVIDIA Blueprint Catalog
+      icon: launch
+spec:
+  type: blueprint
+  lifecycle: production
+  owner: group:default/fusion-team
+  system: fusion-ai-services
