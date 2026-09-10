@@ -1,0 +1,845 @@
+#!/bin/bash
+# Secret Manager (HashiCorp Vault) deployment script
+# Deploys Vault operator and instance for secure secret management
+
+set -e
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# Default values
+NAMESPACE=""  # Will be set after detecting CLI
+STORAGE_CLASS="ocs-storagecluster-ceph-rbd"
+STORAGE_SIZE="10Gi"
+REPLICAS=3
+RELEASE_NAME="vault-operator"
+VALUES_FILE=""
+DRY_RUN=false
+SEAL_TYPE="shamir"
+KMS_KEY_ID=""
+KMS_REGION=""
+KMS_ENDPOINT=""
+
+# Track which options were explicitly set via CLI flags (for values-file precedence)
+_NAMESPACE_SET=false
+_STORAGE_CLASS_SET=false
+_STORAGE_SIZE_SET=false
+_REPLICAS_SET=false
+_SEAL_TYPE_SET=false
+_KMS_KEY_ID_SET=false
+_KMS_REGION_SET=false
+_KMS_ENDPOINT_SET=false
+
+# Function to print colored output
+print_info() {
+    echo -e "${GREEN}[INFO]${NC} $1"
+}
+
+print_warn() {
+    echo -e "${YELLOW}[WARN]${NC} $1"
+}
+
+print_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+# Function to show usage
+usage() {
+    cat << EOF
+Usage: $0 [OPTIONS]
+
+Deploy HashiCorp Vault operator and instance on OpenShift/Kubernetes
+
+OPTIONS:
+    -n, --namespace NAMESPACE       Vault namespace (default: current context namespace or 'vault')
+    -s, --storage-class CLASS       Storage class name (default: ocs-storagecluster-ceph-rbd)
+    -z, --size SIZE                 Storage size (default: 10Gi)
+    -r, --replicas COUNT            Number of Vault replicas (default: 3)
+    -f, --values-file FILE          Custom values file
+    --release-name NAME             Helm release name (default: vault-operator)
+    --seal-type TYPE                Seal type: shamir or awskms (default: shamir)
+    --kms-key-id ID                 AWS KMS key ID, ARN, or alias (required for awskms)
+    --kms-region REGION             AWS region for KMS (required for awskms)
+    --kms-endpoint URL              Custom AWS KMS endpoint (optional)
+    --dry-run                       Show what would be deployed without deploying
+    -h, --help                      Show this help message
+
+EXAMPLES:
+    # Deploy with defaults (Shamir seal)
+    $0
+
+    # Deploy with custom storage class
+    $0 --storage-class fusion-block-storage
+
+    # Deploy with AWS KMS auto-unseal
+    $0 --seal-type awskms \\
+       --kms-key-id "arn:aws:kms:us-east-1:123456789012:key/12345678-1234-1234-1234-123456789012" \\
+       --kms-region us-east-1
+
+    # Deploy with AWS KMS using alias
+    $0 --seal-type awskms \\
+       --kms-key-id "alias/vault-unseal" \\
+       --kms-region us-east-1
+
+    # Deploy with custom values file
+    $0 -f my-values.yaml
+
+    # Dry run to see what would be deployed
+    $0 --dry-run
+
+    # Deploy to custom namespace with 5 replicas
+    $0 -n vault-prod -r 5 -z 20Gi
+
+NOTE:
+    When using AWS KMS auto-unseal, you must create a secret with AWS credentials:
+    
+    kubectl create secret generic vault-aws-kms-credentials \\
+      --from-literal=access-key-id=YOUR_ACCESS_KEY_ID \\
+      --from-literal=secret-access-key=YOUR_SECRET_ACCESS_KEY \\
+      -n vault
+    
+    Alternatively, use IAM roles for service accounts (IRSA) or instance profiles.
+
+EOF
+    exit 1
+}
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -n|--namespace)
+            NAMESPACE="$2"; _NAMESPACE_SET=true
+            shift 2
+            ;;
+        -s|--storage-class)
+            STORAGE_CLASS="$2"; _STORAGE_CLASS_SET=true
+            shift 2
+            ;;
+        -z|--size)
+            STORAGE_SIZE="$2"; _STORAGE_SIZE_SET=true
+            shift 2
+            ;;
+        -r|--replicas)
+            REPLICAS="$2"; _REPLICAS_SET=true
+            shift 2
+            ;;
+        -f|--values-file)
+            VALUES_FILE="$2"
+            shift 2
+            ;;
+        --release-name)
+            RELEASE_NAME="$2"
+            shift 2
+            ;;
+        --seal-type)
+            SEAL_TYPE="$2"; _SEAL_TYPE_SET=true
+            shift 2
+            ;;
+        --kms-key-id)
+            KMS_KEY_ID="$2"; _KMS_KEY_ID_SET=true
+            shift 2
+            ;;
+        --kms-region)
+            KMS_REGION="$2"; _KMS_REGION_SET=true
+            shift 2
+            ;;
+        --kms-endpoint)
+            KMS_ENDPOINT="$2"; _KMS_ENDPOINT_SET=true
+            shift 2
+            ;;
+        --dry-run)
+            DRY_RUN=true
+            shift
+            ;;
+        -h|--help)
+            usage
+            ;;
+        *)
+            print_error "Unknown option: $1"
+            usage
+            ;;
+    esac
+done
+
+# Apply values from a custom values file (CLI flags take precedence)
+if [ -n "$VALUES_FILE" ]; then
+    if [ ! -f "$VALUES_FILE" ]; then
+        print_error "Values file not found: $VALUES_FILE"
+        exit 1
+    fi
+
+    # Ensure yq is available when a values file is provided
+    if ! command -v yq &> /dev/null; then
+        print_info "yq not found. Installing yq..."
+        YQ_VERSION="v4.44.3"
+        YQ_BINARY="yq_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')"
+        YQ_URL="https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/${YQ_BINARY}"
+        if curl -fsSL "$YQ_URL" -o /tmp/yq 2>/dev/null && chmod +x /tmp/yq; then
+            export PATH="/tmp:$PATH"
+            print_info "yq installed to /tmp/yq"
+        else
+            print_error "Failed to download yq from $YQ_URL"
+            print_error "Please install yq manually: https://github.com/mikefarah/yq"
+            exit 1
+        fi
+    fi
+
+    print_info "Reading configuration from values file: $VALUES_FILE"
+
+    _yq_get() { yq e "$1 // \"\"" "$VALUES_FILE" 2>/dev/null || true; }
+
+    if [ "$_NAMESPACE_SET" = false ]; then
+        _val=$(_yq_get '.global.namespace')
+        [ -n "$_val" ] && NAMESPACE="$_val"
+    fi
+    if [ "$_STORAGE_CLASS_SET" = false ]; then
+        _val=$(_yq_get '.vault.storage.storageClassName')
+        [ -n "$_val" ] && STORAGE_CLASS="$_val"
+    fi
+    if [ "$_STORAGE_SIZE_SET" = false ]; then
+        _val=$(_yq_get '.vault.storage.size')
+        [ -n "$_val" ] && STORAGE_SIZE="$_val"
+    fi
+    if [ "$_REPLICAS_SET" = false ]; then
+        _val=$(_yq_get '.vault.replicas')
+        [ -n "$_val" ] && REPLICAS="$_val"
+    fi
+    if [ "$_SEAL_TYPE_SET" = false ]; then
+        _val=$(_yq_get '.vault.seal.type')
+        [ -n "$_val" ] && SEAL_TYPE="$_val"
+    fi
+    if [ "$_KMS_KEY_ID_SET" = false ]; then
+        _val=$(_yq_get '.vault.seal.awskms.kmsKeyId')
+        [ -n "$_val" ] && KMS_KEY_ID="$_val"
+    fi
+    if [ "$_KMS_REGION_SET" = false ]; then
+        _val=$(_yq_get '.vault.seal.awskms.region')
+        [ -n "$_val" ] && KMS_REGION="$_val"
+    fi
+    if [ "$_KMS_ENDPOINT_SET" = false ]; then
+        _val=$(_yq_get '.vault.seal.awskms.endpoint')
+        [ -n "$_val" ] && KMS_ENDPOINT="$_val"
+    fi
+fi
+
+# Check if we're on OpenShift or Kubernetes
+if command -v oc &> /dev/null; then
+    CLI="oc"
+    print_info "Detected OpenShift cluster"
+else
+    CLI="kubectl"
+    print_info "Detected Kubernetes cluster"
+fi
+
+# Default namespace
+NAMESPACE="${NAMESPACE:-vault}"
+print_info "Using namespace: $NAMESPACE"
+
+# Check if Helm is installed
+if ! command -v helm &> /dev/null; then
+    print_error "Helm is not installed. Please install Helm 3.x"
+    exit 1
+fi
+
+print_info "Helm version: $(helm version --short)"
+
+# Check if storage class exists
+print_info "Checking if storage class '$STORAGE_CLASS' exists..."
+if ! $CLI get storageclass "$STORAGE_CLASS" &> /dev/null; then
+    print_error "Storage class '$STORAGE_CLASS' not found"
+    print_info "Available storage classes:"
+    $CLI get storageclass
+    exit 1
+fi
+print_info "Storage class '$STORAGE_CLASS' found"
+
+# Get the directory where this script is located
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+# Chart is in helm/vault-operator relative to script location
+CHART_DIR="$SCRIPT_DIR/../helm/vault-operator"
+PLAYBOOK_PATH="$SCRIPT_DIR/../ansible/playbooks/initialize-vault.yml"
+
+# Check if chart exists
+if [ ! -f "$CHART_DIR/Chart.yaml" ]; then
+    print_error "Chart.yaml not found in $CHART_DIR"
+    print_error "Expected chart at: $CHART_DIR"
+    exit 1
+fi
+
+print_info "Found Vault operator chart at $CHART_DIR"
+
+# Validate seal type
+if [[ "$SEAL_TYPE" != "shamir" && "$SEAL_TYPE" != "awskms" ]]; then
+    print_error "Invalid seal type: $SEAL_TYPE"
+    print_error "Valid options are: shamir, awskms"
+    exit 1
+fi
+
+# Validate AWS KMS parameters if using awskms seal
+if [ "$SEAL_TYPE" = "awskms" ]; then
+    if [ -z "$KMS_KEY_ID" ]; then
+        print_error "AWS KMS key ID is required when using awskms seal type"
+        print_error "Use --kms-key-id to specify the KMS key ID, ARN, or alias"
+        exit 1
+    fi
+    
+    if [ -z "$KMS_REGION" ]; then
+        print_error "AWS region is required when using awskms seal type"
+        print_error "Use --kms-region to specify the AWS region"
+        exit 1
+    fi
+    
+    print_info "AWS KMS auto-unseal configuration:"
+    echo "  KMS Key ID: $KMS_KEY_ID"
+    echo "  Region:     $KMS_REGION"
+    if [ -n "$KMS_ENDPOINT" ]; then
+        echo "  Endpoint:   $KMS_ENDPOINT"
+    fi
+    echo ""
+    
+    # Check if AWS credentials secret exists
+    if ! $CLI get secret vault-aws-kms-credentials -n $NAMESPACE &> /dev/null; then
+        print_warn "AWS credentials secret 'vault-aws-kms-credentials' not found in namespace '$NAMESPACE'"
+        print_warn "Vault will attempt to use IAM roles or instance profiles"
+        print_warn "If those are not configured, create the secret with:"
+        echo ""
+        echo "  $CLI create secret generic vault-aws-kms-credentials \\"
+        echo "    --from-literal=access-key-id=YOUR_ACCESS_KEY_ID \\"
+        echo "    --from-literal=secret-access-key=YOUR_SECRET_ACCESS_KEY \\"
+        echo "    -n $NAMESPACE"
+        echo ""
+    else
+        print_info "✓ AWS credentials secret found"
+    fi
+fi
+
+# Validate Vault configuration before deployment
+print_info "Validating Vault configuration..."
+CLUSTER_ADDR_CHECK=$(grep -c "cluster_address" "$CHART_DIR/templates/vault/vault-instance.yaml" || echo "0")
+
+if [ "$CLUSTER_ADDR_CHECK" -eq 0 ]; then
+    print_error "Vault listener configuration is missing 'cluster_address'"
+    print_error "This will cause multi-replica deployments to fail"
+    echo ""
+    print_info "Required fix in $CHART_DIR/templates/vault/vault-instance.yaml:"
+    echo ""
+    echo "  listener \"tcp\" {"
+    echo "    address         = \"0.0.0.0:8200\""
+    echo "    cluster_address = \"0.0.0.0:8201\"  # ← ADD THIS LINE"
+    echo "    tls_disable     = 1"
+    echo "  }"
+    echo ""
+    
+    if [ "$REPLICAS" -gt 1 ]; then
+        print_error "Cannot proceed with multi-replica deployment without cluster_address"
+        print_info "Please fix the Helm template and run the script again"
+        exit 1
+    else
+        print_warn "Single replica deployment will work, but scaling later will fail"
+    fi
+else
+    print_info "✓ cluster_address is configured"
+fi
+
+# Create namespace if it doesn't exist
+if ! $CLI get namespace "$NAMESPACE" &> /dev/null; then
+    print_info "Creating namespace '$NAMESPACE'..."
+    $CLI create namespace "$NAMESPACE"
+    print_info "Namespace '$NAMESPACE' created"
+else
+    print_info "Namespace '$NAMESPACE' already exists"
+fi
+
+# Store requested replicas for later scaling
+REQUESTED_REPLICAS=$REPLICAS
+
+# For multi-replica deployments, start with 1 replica
+if [ "$REPLICAS" -gt 1 ]; then
+    print_info "Multi-replica deployment requested ($REPLICAS replicas)"
+    print_info "Using two-phase deployment: 1 replica → unseal → scale to $REPLICAS"
+    INITIAL_REPLICAS=1
+else
+    INITIAL_REPLICAS=$REPLICAS
+fi
+
+# Build Helm command
+HELM_CMD="helm install $RELEASE_NAME $CHART_DIR"
+HELM_CMD="$HELM_CMD --namespace $NAMESPACE"
+
+# Add custom values file before --set flags so that --set flags (script options) take precedence
+if [ -n "$VALUES_FILE" ]; then
+    HELM_CMD="$HELM_CMD -f $VALUES_FILE"
+    print_info "Using custom values file: $VALUES_FILE"
+fi
+
+HELM_CMD="$HELM_CMD --set global.namespace=$NAMESPACE"
+HELM_CMD="$HELM_CMD --set operator.namespace=$NAMESPACE"
+HELM_CMD="$HELM_CMD --set vault.storage.storageClassName=$STORAGE_CLASS"
+HELM_CMD="$HELM_CMD --set vault.storage.size=$STORAGE_SIZE"
+HELM_CMD="$HELM_CMD --set vault.replicas=$INITIAL_REPLICAS"
+
+# Add seal configuration
+HELM_CMD="$HELM_CMD --set vault.seal.type=$SEAL_TYPE"
+
+if [ "$SEAL_TYPE" = "awskms" ]; then
+    HELM_CMD="$HELM_CMD --set vault.seal.awskms.kmsKeyId=$KMS_KEY_ID"
+    HELM_CMD="$HELM_CMD --set vault.seal.awskms.region=$KMS_REGION"
+    
+    if [ -n "$KMS_ENDPOINT" ]; then
+        HELM_CMD="$HELM_CMD --set vault.seal.awskms.endpoint=$KMS_ENDPOINT"
+    fi
+fi
+
+# Add dry-run flag if requested
+if [ "$DRY_RUN" = true ]; then
+    HELM_CMD="$HELM_CMD --dry-run --debug"
+    print_warn "DRY RUN MODE - No changes will be made"
+fi
+
+# Display deployment configuration
+echo ""
+print_info "Deployment Configuration:"
+echo "  Release Name:    $RELEASE_NAME"
+echo "  Namespace:       $NAMESPACE"
+echo "  Storage Class:   $STORAGE_CLASS"
+echo "  Storage Size:    $STORAGE_SIZE"
+echo "  Seal Type:       $SEAL_TYPE"
+if [ "$SEAL_TYPE" = "awskms" ]; then
+    echo "  KMS Key ID:      $KMS_KEY_ID"
+    echo "  KMS Region:      $KMS_REGION"
+    if [ -n "$KMS_ENDPOINT" ]; then
+        echo "  KMS Endpoint:    $KMS_ENDPOINT"
+    fi
+fi
+if [ "$REQUESTED_REPLICAS" -gt 1 ]; then
+    echo "  Initial Replicas: $INITIAL_REPLICAS (will scale to $REQUESTED_REPLICAS after unsealing)"
+else
+    echo "  Replicas:        $REPLICAS"
+fi
+if [ -n "$VALUES_FILE" ]; then
+    echo "  Values File:     $VALUES_FILE"
+fi
+echo ""
+
+# Confirm deployment
+if [ "$DRY_RUN" = false ]; then
+    read -p "Do you want to proceed with the deployment? (yes/no): " -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy][Ee][Ss]$ ]]; then
+        print_warn "Deployment cancelled"
+        exit 0
+    fi
+fi
+
+# Deploy
+print_info "Deploying Vault operator..."
+echo ""
+eval $HELM_CMD
+
+if [ "$DRY_RUN" = false ]; then
+    echo ""
+    print_info "Deployment initiated successfully!"
+    echo ""
+    
+    # Wait for Vault pods to be running
+    print_info "Waiting for Vault pods to be running..."
+    for i in {1..60}; do
+        RUNNING_PODS=$($CLI get pods -n $NAMESPACE -l app.kubernetes.io/name=vault --field-selector=status.phase=Running --no-headers 2>/dev/null | wc -l)
+        if [ "$RUNNING_PODS" -ge 1 ]; then
+            print_info "Vault pod is running"
+            break
+        fi
+        if [ $i -eq 60 ]; then
+            print_error "Timeout waiting for Vault pods to start"
+            print_warn "You can manually initialize Vault later using:"
+            echo "  ansible-playbook ansible/playbooks/initialize-vault.yml -e vault_namespace=$NAMESPACE"
+            exit 1
+        fi
+        sleep 5
+    done
+    
+    # Wait additional time for Vault process to start inside the pod
+    print_info "Waiting for Vault process to be ready (30 seconds)..."
+    sleep 30
+    
+    # Verify Vault is responding
+    print_info "Verifying Vault is responding..."
+        for i in {1..12}; do
+        if $CLI exec -n $NAMESPACE vault-0 -- vault status 2>/dev/null; then
+            print_info "Vault is responding"
+                break
+            fi
+            if [ $i -eq 12 ]; then
+            print_warn "Vault may not be fully ready yet"
+                print_info "Continuing with initialization attempt..."
+            fi
+            sleep 5
+        done
+    
+    # Initialize and unseal Vault using Ansible
+    echo ""
+    print_info "Initializing and unsealing Vault using Ansible..."
+    echo ""
+    
+    if command -v ansible-playbook &> /dev/null; then
+        VAULT_NAMESPACE=$NAMESPACE VAULT_SEAL_TYPE=$SEAL_TYPE ansible-playbook "$PLAYBOOK_PATH"
+        
+        if [ $? -eq 0 ]; then
+            echo ""
+            print_info "✓ Vault has been initialized and unsealed!"
+            
+            # Handle multi-replica scaling
+            if [ "$REQUESTED_REPLICAS" -gt 1 ]; then
+                echo ""
+                print_info "═══════════════════════════════════════════════════════════"
+                print_info "  Two-Phase Multi-Replica Deployment"
+                print_info "═══════════════════════════════════════════════════════════"
+                echo ""
+                print_info "Phase 1: ✓ Single replica deployed and unsealed"
+                print_info "Phase 2: Scaling to $REQUESTED_REPLICAS replicas using Helm upgrade..."
+                echo ""
+                
+                # Function to wait for pod condition
+                wait_for_pod_condition() {
+                    local pod_name=$1
+                    local condition=$2
+                    local timeout=${3:-300}
+                    local elapsed=0
+                    
+                    print_info "Waiting for $pod_name to be $condition..."
+                    while [ $elapsed -lt $timeout ]; do
+                        if [ "$condition" = "Running" ]; then
+                            status=$($CLI get pod $pod_name -n $NAMESPACE -o jsonpath='{.status.phase}' 2>/dev/null || echo "")
+                            if [ "$status" = "Running" ]; then
+                                print_info "✓ $pod_name is Running"
+                                return 0
+                            fi
+                        elif [ "$condition" = "Ready" ]; then
+                            ready=$($CLI get pod $pod_name -n $NAMESPACE -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}' 2>/dev/null || echo "")
+                            if [ "$ready" = "True" ]; then
+                                print_info "✓ $pod_name is Ready"
+                                return 0
+                            fi
+                        fi
+                        sleep 5
+                        elapsed=$((elapsed + 5))
+                        if [ $((elapsed % 30)) -eq 0 ]; then
+                            print_info "  Still waiting... ($elapsed/${timeout}s)"
+                        fi
+                    done
+                    print_error "Timeout waiting for $pod_name to be $condition"
+                    return 1
+                }
+                
+                # Function to unseal a specific pod
+                unseal_pod() {
+                    local pod_name=$1
+                    
+                    # Check if using AWS KMS auto-unseal
+                    if [ "$SEAL_TYPE" = "awskms" ]; then
+                        print_info "Waiting for $pod_name to auto-unseal (AWS KMS)..."
+                        
+                        # Wait for pod to auto-unseal (up to 120 seconds for replicas joining Raft)
+                        for i in {1..24}; do
+                            if $CLI exec -n $NAMESPACE $pod_name -- vault status -format=json 2>/dev/null | grep -q '"sealed": false'; then
+                                print_info "✓ $pod_name auto-unsealed successfully"
+                                return 0
+                            fi
+                            sleep 5
+                        done
+                        
+                        print_warn "⚠ $pod_name did not auto-unseal within 120 seconds"
+                        print_info "  Check AWS KMS credentials and permissions"
+                        print_info "  Verify pod logs: $CLI logs -n $NAMESPACE $pod_name"
+                        return 1
+                    fi
+                    
+                    # Shamir seal - manual unsealing required
+                    print_info "Unsealing $pod_name..."
+                    
+                    # Check if already unsealed
+                    if $CLI exec -n $NAMESPACE $pod_name -- vault status -format=json 2>/dev/null | grep -q '"sealed":false'; then
+                        print_info "✓ $pod_name is already unsealed"
+                        return 0
+                    fi
+                    
+                    # Get unseal keys (try both formats)
+                    KEY1=$($CLI get secret vault-unseal-keys -n $NAMESPACE -o jsonpath='{.data.key1}' 2>/dev/null | base64 -d)
+                    if [ -z "$KEY1" ]; then
+                        KEY1=$($CLI get secret vault-unseal-keys -n $NAMESPACE -o jsonpath='{.data.unseal-key-1}' | base64 -d)
+                    fi
+                    
+                    KEY2=$($CLI get secret vault-unseal-keys -n $NAMESPACE -o jsonpath='{.data.key2}' 2>/dev/null | base64 -d)
+                    if [ -z "$KEY2" ]; then
+                        KEY2=$($CLI get secret vault-unseal-keys -n $NAMESPACE -o jsonpath='{.data.unseal-key-2}' | base64 -d)
+                    fi
+                    
+                    KEY3=$($CLI get secret vault-unseal-keys -n $NAMESPACE -o jsonpath='{.data.key3}' 2>/dev/null | base64 -d)
+                    if [ -z "$KEY3" ]; then
+                        KEY3=$($CLI get secret vault-unseal-keys -n $NAMESPACE -o jsonpath='{.data.unseal-key-3}' | base64 -d)
+                    fi
+                    
+                    # Unseal with retries
+                    for attempt in 1 2 3; do
+                        if $CLI exec -n $NAMESPACE $pod_name -- vault operator unseal "$KEY1" &>/dev/null &&
+                           $CLI exec -n $NAMESPACE $pod_name -- vault operator unseal "$KEY2" &>/dev/null &&
+                           $CLI exec -n $NAMESPACE $pod_name -- vault operator unseal "$KEY3" &>/dev/null; then
+                            print_info "✓ Successfully unsealed $pod_name"
+                            return 0
+                        fi
+                        if [ $attempt -lt 3 ]; then
+                            print_warn "  Unseal attempt $attempt failed, retrying in 10s..."
+                            sleep 10
+                        fi
+                    done
+                    
+                    print_error "✗ Failed to unseal $pod_name after 3 attempts"
+                    return 1
+                }
+                # Verify vault-0 is Ready before scaling
+                print_info "Verifying vault-0 is Ready before scaling..."
+                if ! wait_for_pod_condition "vault-0" "Ready" 120; then
+                    print_error "Vault-0 is not Ready. Cannot proceed with scaling."
+                    print_warn "You may need to manually scale and unseal replicas later."
+                    exit 1
+                fi
+                
+                print_info "✓ Vault-0 is Ready and unsealed"
+                echo ""
+                
+                # Scale up using Helm upgrade
+                print_info "Scaling Vault StatefulSet to $REQUESTED_REPLICAS replicas..."
+                HELM_UPGRADE_CMD="helm upgrade $RELEASE_NAME $CHART_DIR"
+                HELM_UPGRADE_CMD="$HELM_UPGRADE_CMD --namespace $NAMESPACE"
+                HELM_UPGRADE_CMD="$HELM_UPGRADE_CMD --reuse-values"
+                HELM_UPGRADE_CMD="$HELM_UPGRADE_CMD --set vault.replicas=$REQUESTED_REPLICAS"
+                
+                if eval $HELM_UPGRADE_CMD; then
+                    print_info "✓ Helm upgrade completed successfully"
+                    echo ""
+                    
+                    # Wait for new pods to be created
+                    print_info "Waiting for new replica pods to be created..."
+                    sleep 10
+                    
+                    # Process each additional replica for unsealing
+                    for i in $(seq 1 $((REQUESTED_REPLICAS - 1))); do
+                        POD_NAME="vault-$i"
+                        echo ""
+                        print_info "───────────────────────────────────────────────────────────"
+                        print_info "Processing replica $((i + 1))/$REQUESTED_REPLICAS: $POD_NAME"
+                        print_info "───────────────────────────────────────────────────────────"
+                        
+                        # Wait for pod to be created and Running
+                        if ! wait_for_pod_condition "$POD_NAME" "Running" 300; then
+                            print_error "Failed to wait for $POD_NAME. Stopping replica processing."
+                            break
+                        fi
+                        
+                        
+                        # Give pod time to attempt Raft join
+                        print_info "Waiting for $POD_NAME to join Raft cluster (30s)..."
+                        sleep 30
+                        
+                        # Unseal the pod
+                        if unseal_pod "$POD_NAME"; then
+                            # Wait for pod to become Ready
+                            if wait_for_pod_condition "$POD_NAME" "Ready" 120; then
+                                print_info "✓ $POD_NAME is unsealed and ready"
+                            else
+                                print_warn "⚠ $POD_NAME is unsealed but not yet Ready"
+                                print_info "  This may resolve itself. Check status with:"
+                                echo "    $CLI get pods -n $NAMESPACE"
+                            fi
+                        else
+                            print_error "Failed to unseal $POD_NAME"
+                            if [ "$SEAL_TYPE" = "awskms" ]; then
+                                print_info "Troubleshooting steps for AWS KMS auto-unseal:"
+                                echo "  1. Check pod logs: $CLI logs -n $NAMESPACE $POD_NAME"
+                                echo "  2. Verify AWS credentials secret exists and is correct"
+                                echo "  3. Verify IAM permissions for KMS key access"
+                                echo "  4. Check pod status: $CLI exec -n $NAMESPACE $POD_NAME -- vault status"
+                            else
+                                print_info "You can manually unseal it later using:"
+                                echo "  ./scripts/unseal-secret-manager.sh -n $NAMESPACE"
+                            fi
+                        fi
+                    done
+                    
+                    echo ""
+                    print_info "═══════════════════════════════════════════════════════════"
+                    print_info "  Multi-Replica Deployment Complete"
+                    print_info "═══════════════════════════════════════════════════════════"
+                    echo ""
+                    
+                    # Display final status
+                    print_info "Final Vault cluster status:"
+                    $CLI get pods -n $NAMESPACE -l app.kubernetes.io/name=vault
+                    echo ""
+                    
+                    # Verify Raft cluster formation
+                    print_info "Verifying Raft cluster formation..."
+                    sleep 5  # Give Raft a moment to stabilize
+                    
+                    RAFT_PEERS=$($CLI exec -n $NAMESPACE vault-0 -- vault operator raft list-peers 2>/dev/null || echo "")
+                    
+                    if [ -n "$RAFT_PEERS" ]; then
+                        echo "$RAFT_PEERS"
+                        echo ""
+                        
+                        PEER_COUNT=$(echo "$RAFT_PEERS" | grep -c "vault-" || echo "0")
+                        
+                        if [ "$PEER_COUNT" -eq "$REQUESTED_REPLICAS" ]; then
+                            print_info "✓ All $REQUESTED_REPLICAS replicas successfully joined Raft cluster"
+                        else
+                            print_warn "⚠ Only $PEER_COUNT of $REQUESTED_REPLICAS replicas in Raft cluster"
+                            print_info "Run diagnostics to identify issues:"
+                            echo "  ./scripts/diagnose-vault-raft.sh -n $NAMESPACE --verbose"
+                        fi
+                    else
+                        print_warn "Could not verify Raft cluster status"
+                        print_info "Manually check with:"
+                        echo "  $CLI exec -n $NAMESPACE vault-0 -- vault operator raft list-peers"
+                    fi
+                else
+                    print_error "Helm upgrade failed. Vault remains at 1 replica."
+                    print_warn "You can manually scale later using:"
+                    echo "  helm upgrade $RELEASE_NAME $CHART_DIR --namespace $NAMESPACE --reuse-values --set vault.replicas=$REQUESTED_REPLICAS"
+                    echo "  ./scripts/unseal-secret-manager.sh -n $NAMESPACE"
+                fi
+            fi
+            
+            echo ""
+            print_info "To access Vault:"
+            echo "  1. Get the root token:"
+            if [ "$SEAL_TYPE" = "awskms" ]; then
+                echo "     $CLI get secret vault-recovery-keys -n $NAMESPACE -o jsonpath='{.data.root-token}' | base64 -d"
+            else
+                echo "     $CLI get secret vault-unseal-keys -n $NAMESPACE -o jsonpath='{.data.root-token}' | base64 -d"
+            fi
+            echo ""
+            echo "  2. Access Vault UI (if route/ingress configured):"
+            echo "     $CLI get route vault -n $NAMESPACE -o jsonpath='{.spec.host}' 2>/dev/null || echo 'No route configured'"
+            echo ""
+            echo "  3. Or use port-forward:"
+            echo "     $CLI port-forward -n $NAMESPACE svc/vault 8200:8200"
+            echo "     # Then open: http://localhost:8200"
+            echo ""
+            echo "  4. Validate deployment:"
+            echo "     ./scripts/validate-secret-manager.sh -n $NAMESPACE"
+            echo ""
+            if [ "$SEAL_TYPE" = "awskms" ]; then
+                print_warn "IMPORTANT: Back up the vault-recovery-keys secret to a secure location!"
+                print_info "NOTE: Vault is using AWS KMS auto-unseal. Recovery keys are only needed for disaster recovery."
+            else
+                print_warn "IMPORTANT: Back up the vault-unseal-keys secret to a secure location!"
+            fi
+        else
+            print_error "Vault initialization failed"
+            echo ""
+            print_info "═══════════════════════════════════════════════════════════"
+            print_info "  NEXT STEPS: Manual Vault Initialization Required"
+            print_info "═══════════════════════════════════════════════════════════"
+            echo ""
+            print_info "Option 1: Retry with Ansible (Recommended)"
+            echo "  ansible-playbook $PLAYBOOK_PATH -e vault_namespace=$NAMESPACE"
+            echo ""
+            print_info "Option 2: Manual Initialization"
+            echo "  # Step 1: Port forward to Vault"
+            echo "  $CLI port-forward -n $NAMESPACE svc/vault 8200:8200 &"
+            echo ""
+            echo "  # Step 2: Set Vault address"
+            echo "  export VAULT_ADDR='http://127.0.0.1:8200'"
+            echo ""
+            echo "  # Step 3: Initialize Vault (SAVE THE OUTPUT!)"
+            echo "  vault operator init -key-shares=5 -key-threshold=3"
+            echo ""
+            echo "  # Step 4: Unseal Vault (use any 3 of 5 keys)"
+            echo "  vault operator unseal <unseal-key-1>"
+            echo "  vault operator unseal <unseal-key-2>"
+            echo "  vault operator unseal <unseal-key-3>"
+            echo ""
+            echo "  # Step 5: Login with root token"
+            echo "  vault login <root-token>"
+            echo ""
+            print_warn "CRITICAL: Save unseal keys and root token in a secure location!"
+            echo ""
+        fi
+    else
+        print_warn "ansible-playbook not found. Skipping automatic initialization."
+        echo ""
+        print_info "═══════════════════════════════════════════════════════════"
+        print_info "  NEXT STEPS: Vault Initialization Required"
+        print_info "═══════════════════════════════════════════════════════════"
+        echo ""
+        print_info "Option 1: Use Provided Ansible Playbook (Recommended)"
+        echo "  This project includes an Ansible playbook that automates:"
+        echo "  • Vault initialization with 5 unseal keys"
+        echo "  • Automatic unsealing of all Vault pods"
+        echo "  • Secure storage of keys in Kubernetes secret"
+        echo ""
+        echo "  # Step 1: Install Ansible and dependencies"
+        echo "  pip install ansible"
+        echo "  ansible-galaxy collection install -r ansible/requirements.yml"
+        echo ""
+        echo "  # Step 2: Run the initialization playbook"
+        echo "  cd $(dirname $SCRIPT_DIR)"
+        echo "  ansible-playbook ansible/playbooks/initialize-vault.yml -e vault_namespace=$NAMESPACE"
+        echo ""
+        echo "  The playbook will:"
+        echo "  • Check if Vault is already initialized"
+        echo "  • Initialize Vault if needed (5 keys, threshold 3)"
+        echo "  • Unseal all Vault pods automatically"
+        echo "  • Store keys in 'vault-unseal-keys' secret"
+        echo ""
+        echo "  After completion, retrieve credentials:"
+        echo "  $CLI get secret vault-unseal-keys -n $NAMESPACE -o jsonpath='{.data.root-token}' | base64 -d"
+        echo ""
+        print_info "Option 2: Manual Initialization"
+        echo "  # Step 1: Port forward to Vault"
+        echo "  $CLI port-forward -n $NAMESPACE svc/vault 8200:8200 &"
+        echo ""
+        echo "  # Step 2: Set Vault address"
+        echo "  export VAULT_ADDR='http://127.0.0.1:8200'"
+        echo ""
+        echo "  # Step 3: Initialize Vault (SAVE THE OUTPUT!)"
+        echo "  vault operator init -key-shares=5 -key-threshold=3"
+        echo "  # Output will show:"
+        echo "  #   Unseal Key 1: <key1>"
+        echo "  #   Unseal Key 2: <key2>"
+        echo "  #   Unseal Key 3: <key3>"
+        echo "  #   Unseal Key 4: <key4>"
+        echo "  #   Unseal Key 5: <key5>"
+        echo "  #   Initial Root Token: <token>"
+        echo ""
+        echo "  # Step 4: Unseal Vault (use any 3 of 5 keys)"
+        echo "  vault operator unseal <unseal-key-1>"
+        echo "  vault operator unseal <unseal-key-2>"
+        echo "  vault operator unseal <unseal-key-3>"
+        echo ""
+        echo "  # Step 5: Verify Vault is unsealed"
+        echo "  vault status"
+        echo "  # Should show: Sealed = false"
+        echo ""
+        echo "  # Step 6: Login with root token"
+        echo "  vault login <root-token>"
+        echo ""
+        echo "  # Step 7: Verify login"
+        echo "  vault token lookup"
+        echo ""
+        print_warn "CRITICAL: Save unseal keys and root token in a secure location!"
+        print_warn "          You will need 3 keys to unseal Vault after any restart."
+        echo ""
+        print_info "After initialization, configure Vault for spoke clusters:"
+        echo "  1. Enable Kubernetes auth: vault auth enable kubernetes"
+        echo "  2. Enable secrets engine: vault secrets enable -path=secret kv-v2"
+        echo "  3. Create policies and roles for each spoke cluster"
+        echo ""
+    fi
+fi
+
+# Made with Bob

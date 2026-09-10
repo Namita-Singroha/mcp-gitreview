@@ -1,0 +1,372 @@
+
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>mcp-gitreview — Interview Revision Sheet</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.7;
+    color: #1f2328;
+    background: #fff;
+    padding: 32px 16px 64px;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; }
+
+  h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .subtitle { color: #57606a; font-size: 13px; margin-bottom: 36px; }
+
+  section { margin-bottom: 36px; }
+  h2 {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #57606a;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 6px;
+    margin-bottom: 16px;
+  }
+
+  /* Story block */
+  .story {
+    background: #f7f8fa;
+    border-left: 4px solid #3b82d4;
+    border-radius: 0 6px 6px 0;
+    padding: 16px 18px;
+    font-size: 14px;
+    line-height: 1.8;
+  }
+  .story p { margin-bottom: 10px; }
+  .story p:last-child { margin-bottom: 0; }
+
+  /* Q&A */
+  .qa { margin-bottom: 18px; border: 1px solid #e5e7eb; border-radius: 6px; overflow: hidden; }
+  .qa .q {
+    background: #f7f8fa;
+    padding: 10px 14px;
+    font-weight: 600;
+    font-size: 13.5px;
+    color: #1f2328;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  .qa .q .tag {
+    float: right;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .tag-basic { background: #e6f4ea; color: #2e7d32; }
+  .tag-mid { background: #fff3cd; color: #92600a; }
+  .tag-deep { background: #fde8e8; color: #b91c1c; }
+  .qa .a {
+    padding: 12px 14px;
+    color: #1f2328;
+    font-size: 13.5px;
+  }
+  .qa .a code {
+    font-family: "SF Mono", "Fira Code", monospace;
+    font-size: 12px;
+    background: #f0f0f0;
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: #3b82d4;
+  }
+  .qa .a pre {
+    background: #1f2328;
+    color: #e6edf3;
+    padding: 12px 14px;
+    border-radius: 5px;
+    font-size: 12px;
+    font-family: "SF Mono", "Fira Code", monospace;
+    overflow-x: auto;
+    margin: 8px 0;
+    line-height: 1.6;
+  }
+  .qa .a ul { padding-left: 18px; margin: 6px 0; }
+  .qa .a li { margin-bottom: 4px; }
+
+  /* flow diagram */
+  .flow { margin: 10px 0; }
+  .flow-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+    font-size: 13px;
+  }
+  .flow-box {
+    background: #eef2fb;
+    border: 1px solid #c7d7f5;
+    border-radius: 5px;
+    padding: 5px 10px;
+    color: #1f2328;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .flow-box.gh { background: #e6f4ea; border-color: #a8d5b5; }
+  .flow-arrow { color: #57606a; font-size: 16px; }
+  .flow-label { color: #57606a; font-size: 12px; }
+
+  /* table */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 8px 0; }
+  th { background: #f7f8fa; padding: 8px 10px; text-align: left; font-weight: 600; border: 1px solid #e5e7eb; color: #57606a; font-size: 12px; }
+  td { padding: 8px 10px; border: 1px solid #e5e7eb; vertical-align: top; }
+  tr:nth-child(even) td { background: #fafafa; }
+
+  .note {
+    background: #fffbea;
+    border: 1px solid #f0d060;
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: #6b4f00;
+    margin: 10px 0;
+  }
+
+  footer {
+    margin-top: 48px;
+    padding-top: 14px;
+    border-top: 1px solid #e5e7eb;
+    text-align: center;
+    color: #57606a;
+    font-size: 12px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>mcp-gitreview — Interview Revision Sheet</h1>
+  <p class="subtitle">Read this before any interview. Covers the full story, every likely question, Go + MCP concepts, and deeper discussion points.</p>
+
+  
+  <section>
+    <h2>Your Story — Say This First</h2>
+    <div class="story">
+      <p><strong>Problem:</strong> AI assistants like Claude are powerful but they can't browse GitHub on their own. If you want to ask "what are the open PRs in this repo?" you'd have to go to GitHub, copy-paste everything into the chat manually. That's tedious.</p>
+      <p><strong>What I built:</strong> An MCP server in Go that acts as a bridge. It exposes a set of named tools — like <code>list_pull_requests</code>, <code>list_branches</code>, <code>list_commits</code> — that Claude can call directly. So you just ask in plain English and Claude fetches live GitHub data for you.</p>
+      <p><strong>How it works:</strong> The server runs as a local binary. Claude Desktop launches it as a subprocess and talks to it over stdin/stdout using the MCP protocol — JSON messages in, JSON messages out. The binary uses the official MCP Go SDK which handles all that plumbing. My code only has the business logic — calling GitHub's REST API and formatting the results.</p>
+      <p><strong>Why Go:</strong> It compiles to a single binary with no runtime dependencies. Claude Desktop just runs it — no "install Python first" or "npm install". That matters for a local tool.</p>
+      <p><strong>What I learned:</strong> How the MCP protocol works, how AI tools are registered and called, Go's concurrency primitives for safe shared state, and how to structure a small Go project cleanly into layers.</p>
+    </div>
+  </section>
+
+  
+  <section>
+    <h2>Basic Questions <span style="color:#2e7d32;font-size:11px;font-weight:600;text-transform:none">— Everyone gets asked these</span></h2>
+
+    <div class="qa">
+      <div class="q">What does this project do? <span class="tag tag-basic">Basic</span></div>
+      <div class="a">It's a Go server that lets Claude AI query GitHub repos using natural language. You ask things like "show me open PRs" and Claude calls my tool which fetches live data from GitHub's API and returns it.</div>
+    </div>
+
+    <div class="qa">
+      <div class="q">What is MCP? <span class="tag tag-basic">Basic</span></div>
+      <div class="a">Model Context Protocol — a standard for giving AI assistants external tools they can call. You register tools with a name and description. The AI reads the descriptions and decides which tool to call based on what the user asks. My server implements this protocol.</div>
+    </div>
+
+    <div class="qa">
+      <div class="q">What tools did you expose? <span class="tag tag-basic">Basic</span></div>
+      <div class="a">
+        <ul>
+          <li><code>set_github_repository</code> — set which repo to work with</li>
+          <li><code>set_github_token</code> — add a PAT for private repos</li>
+          <li><code>list_commits</code> — last 10 commits</li>
+          <li><code>list_branches</code> — all branches</li>
+          <li><code>get_latest_commit_message</code> — most recent commit</li>
+          <li><code>get_repository_details</code> — stars, forks, open issues</li>
+          <li><code>list_pull_requests</code> — open PRs</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="qa">
+      <div class="q">How does Claude talk to your server? <span class="tag tag-basic">Basic</span></div>
+      <div class="a">Via stdio — standard input/output. Claude Desktop launches my binary as a child process and sends JSON over stdin. My server responds over stdout. No HTTP port, no network. The MCP SDK handles reading/writing that JSON — I never touched stdin/stdout directly.</div>
+    </div>
+
+    <div class="qa">
+      <div class="q">Why Go? <span class="tag tag-basic">Basic</span></div>
+      <div class="a">It compiles to a single self-contained binary. Claude Desktop just runs it with no setup — no runtime, no package manager, nothing to install. Go also has a great standard library for HTTP and JSON which is all I needed here.</div>
+    </div>
+
+    <div class="qa">
+      <div class="q">What is an SDK? <span class="tag tag-basic">Basic</span></div>
+      <div class="a">Pre-written code from someone else that handles a specific protocol or service so you don't have to. I used the official MCP Go SDK — it reads stdin, parses JSON, routes the call to the right handler, and writes the response back. I just wrote the tool logic.</div>
+    </div>
+
+  </section>
+
+  
+  <section>
+    <h2>Mid-Level Questions <span style="color:#92600a;font-size:11px;font-weight:600;text-transform:none">— If they want more detail</span></h2>
+
+    <div class="qa">
+      <div class="q">Walk me through what happens when I ask "list branches in golang/go" <span class="tag tag-mid">Mid</span></div>
+      <div class="a">
+        <div class="flow">
+          <div class="flow-row"><div class="flow-box">You type in Claude</div><div class="flow-arrow">→</div><div class="flow-label">Claude LLM decides to call set_github_repository first</div></div>
+          <div class="flow-row"><div class="flow-box">Claude</div><div class="flow-arrow">→</div><div class="flow-label">writes JSON { name: "set_github_repository", arguments: { repo: "golang/go" } } to stdin</div></div>
+          <div class="flow-row"><div class="flow-box">SDK</div><div class="flow-arrow">→</div><div class="flow-label">reads stdin, parses JSON, finds my handler, calls it with args.Repo = "golang/go"</div></div>
+          <div class="flow-row"><div class="flow-box">My code</div><div class="flow-arrow">→</div><div class="flow-label">stores "golang/go" in memory, returns success</div></div>
+          <div class="flow-row"><div class="flow-box">Claude</div><div class="flow-arrow">→</div><div class="flow-label">now calls list_branches (no args needed, repo already set)</div></div>
+          <div class="flow-row"><div class="flow-box">My code</div><div class="flow-arrow">→</div><div class="flow-label">reads repo from memory, calls https://api.github.com/repos/golang/go/branches</div></div>
+          <div class="flow-row"><div class="flow-box gh">GitHub API</div><div class="flow-arrow">→</div><div class="flow-label">returns JSON array of branches</div></div>
+          <div class="flow-row"><div class="flow-box">My code</div><div class="flow-arrow">→</div><div class="flow-label">formats as plain text, returns to SDK → stdout → Claude → you</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="qa">
+      <div class="q">How does your code structure look? <span class="tag tag-mid">Mid</span></div>
+      <div class="a">
+        Three internal packages, each with one job:
+        <ul>
+          <li><strong>internal/github</strong> — HTTP client for GitHub API. Makes requests, adds auth header, decodes JSON response</li>
+          <li><strong>internal/server</strong> — Holds session state (active repo + token). Nothing else</li>
+          <li><strong>internal/tools</strong> — Registers all 7 tools with the MCP server and wires them to the other two packages</li>
+        </ul>
+        <code>main.go</code> just creates the context, creates the MCP server, calls <code>RegisterAll</code>, and starts listening.
+      </div>
+    </div>
+
+    <div class="qa">
+      <div class="q">How did you handle private repos? <span class="tag tag-mid">Mid</span></div>
+      <div class="a">Via the <code>set_github_token</code> tool. The user provides a GitHub Personal Access Token, it's stored in memory with a 1-hour TTL. Every GitHub API request checks for a token and if present adds an <code>Authorization: Bearer &lt;token&gt;</code> header. If the token has expired, it's not sent — the request just fails with 401 rather than using a stale token.</div>
+    </div>
+
+    <div class="qa">
+      <div class="q">How does the token expiry work? <span class="tag tag-mid">Mid</span></div>
+      <div class="a">
+        When the token is set, I store the current time + 1 hour as the expiry:
+        <pre>c.token = token
+c.expiry = time.Now().Add(ttl)  // ttl = 1 hour</pre>
+        On every read, I check:
+        <pre>if time.Now().After(c.expiry) {
+    return ""  // expired, return empty
+}</pre>
+        Empty token = no auth header = GitHub rejects private repo access. Clean and simple.
+      </div>
+    </div>
+
+    <div class="qa">
+      <div class="q">Is the repo persisted across restarts? <span class="tag tag-mid">Mid</span></div>
+      <div class="a">No. It's stored in a plain Go struct in memory — just a string field. When the binary stops (Claude Desktop closes), it's gone. Next session you set it again. I didn't need persistence for a personal tool but it would be a natural improvement.</div>
+    </div>
+
+    <div class="qa">
+      <div class="q">What is the TokenProvider pattern you used? <span class="tag tag-mid">Mid</span></div>
+      <div class="a">Instead of passing the token as a string when creating the GitHub client, I pass a <strong>function</strong> that returns the token:
+        <pre>type TokenProvider func() string
+
+github.NewClientFunc(func() string { return serverCtx.GetToken() })</pre>
+        This means every time a request is made, the token is fetched fresh — including the expiry check. If I passed the token directly at construction time, I'd capture a stale value and never know it expired.
+      </div>
+    </div>
+
+  </section>
+
+  
+  <section>
+    <h2>Deeper Discussion <span style="color:#b91c1c;font-size:11px;font-weight:600;text-transform:none">— If they really dig in</span></h2>
+
+    <div class="qa">
+      <div class="q">Why did you use sync.RWMutex? <span class="tag tag-deep">Deep</span></div>
+      <div class="a">
+        The MCP SDK can theoretically call tool handlers concurrently. If two tools read/write the shared <code>repo</code> or <code>token</code> at the same time without synchronisation, you get a data race — unpredictable corrupted state. <br /><br />
+        <code>RWMutex</code> allows many concurrent reads (e.g. multiple tools reading the repo) but only one write at a time. <code>Lock()</code> for writes, <code>RLock()</code> for reads. <code>defer Unlock()</code> ensures it's always released even if the function panics.
+      </div>
+    </div>
+
+    <div class="qa">
+      <div class="q">What does defer do and why did you use it? <span class="tag tag-deep">Deep</span></div>
+      <div class="a">
+        <code>defer</code> schedules a function call to run when the surrounding function returns — no matter how it returns (normally, early return, panic). I used it in two places:
+        <ul>
+          <li><code>defer resp.Body.Close()</code> — ensures the HTTP response body is always closed, preventing memory/connection leaks</li>
+          <li><code>defer c.mu.Unlock()</code> — ensures the mutex is always released even if the function returns early</li>
+        </ul>
+        Without defer, if I returned early due to an error, I'd forget to close/unlock and cause bugs.
+      </div>
+    </div>
+
+    <div class="qa">
+      <div class="q">What are struct tags and why are they needed? <span class="tag tag-deep">Deep</span></div>
+      <div class="a">
+        Struct tags tell Go's JSON library how to map between JSON keys and Go field names. GitHub's API returns <code>"stargazers_count"</code> but my Go field is <code>Stars</code>. Without the tag, Go wouldn't know they're the same thing:
+        <pre>Stars int `json:"stargazers_count"`</pre>
+        The backtick syntax is Go's way of attaching metadata to struct fields.
+      </div>
+    </div>
+
+    <div class="qa">
+      <div class="q">How does memory management work here? <span class="tag tag-deep">Deep</span></div>
+      <div class="a">Go has a garbage collector — I don't manually allocate or free memory. The <code>Context</code> struct is allocated once when the binary starts and lives for the entire process lifetime because <code>main</code> always holds a reference to it. When strings get overwritten (e.g. repo changes), the old string becomes unreferenced and the GC cleans it up automatically. I never called <code>free()</code> or worried about it.</div>
+    </div>
+
+    <div class="qa">
+      <div class="q">Could you support HTTP/remote transport instead of just stdio? <span class="tag tag-deep">Deep</span></div>
+      <div class="a">Yes. The MCP Go SDK supports SSE (Server-Sent Events) over HTTP as well. Right now <code>main.go</code> has:
+        <pre>mcpServer.Run(ctx, &amp;mcp.StdioTransport{})</pre>
+        To support remote access I'd swap that for an HTTP transport. The rest of the code — all the tools, the GitHub client, the context — stays identical. I chose stdio because Claude Desktop runs the binary locally as a subprocess, so it's the right and simplest fit.
+      </div>
+    </div>
+
+    <div class="qa">
+      <div class="q">What would you improve if this were production? <span class="tag tag-deep">Deep</span></div>
+      <div class="a">
+        <ul>
+          <li><strong>Token security</strong> — storing in plain memory is fine locally but in production I'd use a secrets store or OS keychain</li>
+          <li><strong>Persistence</strong> — write repo preference to a config file so it survives restarts</li>
+          <li><strong>Pagination</strong> — GitHub API returns paginated results. Currently I only get the first page</li>
+          <li><strong>Rate limiting</strong> — GitHub has API rate limits. I'd add retry logic with backoff</li>
+          <li><strong>More tools</strong> — search issues, view diffs, comment on PRs</li>
+          <li><strong>HTTP transport</strong> — make it remotely accessible, not just local</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="qa">
+      <div class="q">How does Claude know WHEN to call which tool? <span class="tag tag-deep">Deep</span></div>
+      <div class="a">That's entirely the LLM's intelligence — not my code. Each tool has a <code>Description</code> field. Claude reads all descriptions at startup and uses them to reason about which tool fits the user's intent. I just wrote clear descriptions. I have no control over the routing logic — that's the AI's job. This is the core value of MCP: the AI autonomously decides the sequence of tool calls needed to answer a question.</div>
+    </div>
+
+  </section>
+
+  
+  <section>
+    <h2>Quick Concept Reference — If You Blank Out</h2>
+    <table>
+      <thead><tr><th>Term</th><th>One sentence</th></tr></thead>
+      <tbody>
+        <tr><td><strong>MCP</strong></td><td>A protocol for giving AI assistants named external tools to call</td></tr>
+        <tr><td><strong>stdio</strong></td><td>Standard input/output — how two processes communicate via text streams</td></tr>
+        <tr><td><strong>SDK</strong></td><td>Someone else's library that handles a protocol so you only write the logic</td></tr>
+        <tr><td><strong>struct</strong></td><td>A way to group related data fields into one named type in Go</td></tr>
+        <tr><td><strong>pointer (*)</strong></td><td>A variable that holds a memory address instead of a value directly</td></tr>
+        <tr><td><strong>interface</strong></td><td>A contract — any type that has these methods satisfies this interface</td></tr>
+        <tr><td><strong>mutex</strong></td><td>A lock that prevents two goroutines from accessing the same data at the same time</td></tr>
+        <tr><td><strong>defer</strong></td><td>Run this line when the current function exits — used for cleanup</td></tr>
+        <tr><td><strong>struct tags</strong></td><td>Metadata on struct fields — tells json.Unmarshal which JSON key maps to which field</td></tr>
+        <tr><td><strong>garbage collector</strong></td><td>Go automatically frees memory you no longer reference — no manual free()</td></tr>
+        <tr><td><strong>TokenProvider (func)</strong></td><td>Passing a function instead of a value so it's evaluated fresh on every call</td></tr>
+        <tr><td><strong>PAT</strong></td><td>Personal Access Token — GitHub's way to authenticate API calls for private repos</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <div class="note">
+    <strong>Remember:</strong> This is a personal project. You don't need to defend every decision perfectly. If asked something hard, it's fine to say "I didn't need that for a personal tool but in production I would..." — that shows maturity.
+  </div>
+
+  <footer>Made with IBM Bob</footer>
+</div>
+</body>
+</html>

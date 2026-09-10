@@ -1,0 +1,191 @@
+{{- if .Values.operators.enabled }}
+{{- if .Values.operators.developerHub.enabled }}
+{{- $existingCSV := lookup "operators.coreos.com/v1alpha1" "ClusterServiceVersion" .Values.operators.developerHub.namespace "rhdh-operator.v1.10.2" }}
+{{- $existingCSVAny := lookup "operators.coreos.com/v1alpha1" "ClusterServiceVersion" .Values.operators.developerHub.namespace "" }}
+{{- $existingSubscription := lookup "operators.coreos.com/v1alpha1" "Subscription" .Values.operators.developerHub.namespace "rhdh-operator" }}
+{{- $skipInstall := and .Values.operators.skipIfExists (or $existingCSV $existingCSVAny $existingSubscription) }}
+{{- if not $skipInstall }}
+---
+# Namespace for Red Hat Developer Hub Operator
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Values.operators.developerHub.namespace }}
+  labels:
+    {{- include "fusion-developer-hub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: rhdh-operator
+  annotations:
+    {{- include "fusion-developer-hub.annotations" . | nindent 4 }}
+    {{- if not .Values.argocd.enabled }}
+    # helm.sh/hook — plain Helm installs only (argocd.enabled=false).
+    # Enforces Namespace → OperatorGroup → Subscription creation order via hook weights.
+    # Omitted when argocd.enabled=true because ArgoCD uses sync-wave for ordering instead.
+    # Using both together causes ArgoCD to treat hook resources as out-of-band and ignore
+    # sync-wave, breaking the ordering guarantee.
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: "-10"
+    {{- end }}
+    # argocd.argoproj.io/sync-wave — ArgoCD-managed deployments only.
+    # Wave 0 ensures the Namespace is created before the OperatorGroup (wave 20) and
+    # Subscription (wave 30) that reference it.  Without this, ArgoCD applies all resources
+    # in a single batch and the Subscription may be rejected because the namespace does not
+    # exist yet.  These annotations are harmless in plain Helm installs (Helm ignores them).
+    argocd.argoproj.io/sync-wave: "0"
+---
+# OperatorGroup for Red Hat Developer Hub
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  name: rhdh-operator-group
+  namespace: {{ .Values.operators.developerHub.namespace }}
+  labels:
+    {{- include "fusion-developer-hub.labels" . | nindent 4 }}
+  annotations:
+    {{- if not .Values.argocd.enabled }}
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: "-9"
+    {{- end }}
+    argocd.argoproj.io/sync-wave: "20"
+    # Required: OLM webhook is absent on fresh clusters; ArgoCD dry-run fails without this.
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec: {}
+  # RHDH operator requires AllNamespaces install mode
+  # Leave spec empty to watch all namespaces
+---
+# Subscription for Red Hat Developer Hub Operators
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: rhdh-operator
+  namespace: {{ .Values.operators.developerHub.namespace }}
+  labels:
+    {{- include "fusion-developer-hub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: rhdh-operator
+  annotations:
+    {{- if not .Values.argocd.enabled }}
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: "-8"
+    {{- end }}
+    argocd.argoproj.io/sync-wave: "30"
+    # Replace=true: OLM Subscriptions are immutable after InstallPlan creation; patch → "field is immutable".
+    # SkipDryRunOnMissingResource=true: OLM CRDs may be absent on fresh clusters; prevents dry-run failure.
+    argocd.argoproj.io/sync-options: Replace=true,SkipDryRunOnMissingResource=true
+spec:
+  channel: {{ .Values.operators.developerHub.channel }}
+  name: rhdh
+  source: redhat-operators
+  sourceNamespace: openshift-marketplace
+  {{- if .Values.operators.developerHub.startingCSV }}
+  startingCSV: {{ .Values.operators.developerHub.startingCSV }}
+  {{- end }}
+  installPlanApproval: {{ .Values.operators.developerHub.installPlanApproval | default "Automatic" }}
+---
+# Wait for operator to be ready
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: wait-for-rhdh-operator
+  namespace: {{ .Values.operators.developerHub.namespace }}
+  labels:
+    {{- include "fusion-developer-hub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: rhdh-operator-setup
+  annotations:
+    {{- if not .Values.argocd.enabled }}
+    # Plain Helm only: post-install/post-upgrade hook; before-hook-creation cleans up prior run.
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-weight: "1"
+    helm.sh/hook-delete-policy: before-hook-creation
+    {{- end }}
+    argocd.argoproj.io/sync-wave: "40"
+    # Jobs are immutable after creation; Force+Replace deletes and recreates on each sync.
+    # SkipDryRunOnMissingResource=true: prevents dry-run failure when batch/v1 webhook absent.
+    argocd.argoproj.io/sync-options: Force=true,Replace=true,SkipDryRunOnMissingResource=true
+spec:
+  template:
+    metadata:
+      labels:
+        {{- include "fusion-developer-hub.labels" . | nindent 8 }}
+    spec:
+      serviceAccountName: rhdh-setup-sa
+      restartPolicy: OnFailure
+      containers:
+      - name: wait
+        image: {{ .Values.global.toolsImage }}
+        command:
+        - /bin/bash
+        - -c
+        - |
+          set -e
+          echo "Waiting for Red Hat Developer Hub operator to be ready..."
+          
+          # Wait for CSV to be succeeded (max 10 minutes)
+          for i in {1..120}; do
+            CSV_PHASE=$(oc get csv -n {{ .Values.operators.developerHub.namespace }} --no-headers 2>/dev/null | grep -i "rhdh-operator" | awk '{print $NF}' | head -1 || echo "NotFound")
+            if [ "$CSV_PHASE" = "Succeeded" ]; then
+              echo "Red Hat Developer Hub operator is ready"
+              exit 0
+            fi
+            echo "Waiting for operator... (attempt $i/120, phase: $CSV_PHASE)"
+            sleep 5
+          done
+          
+          echo "ERROR: Red Hat Developer Hub operator did not become ready within timeout"
+          exit 1
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: rhdh-setup-sa
+  namespace: {{ .Values.operators.developerHub.namespace }}
+  labels:
+    {{- include "fusion-developer-hub.labels" . | nindent 4 }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: rhdh-setup-role
+  labels:
+    {{- include "fusion-developer-hub.labels" . | nindent 4 }}
+rules:
+- apiGroups: ["operators.coreos.com"]
+  resources: ["clusterserviceversions", "subscriptions"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: rhdh-setup-binding
+  labels:
+    {{- include "fusion-developer-hub.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: rhdh-setup-role
+subjects:
+- kind: ServiceAccount
+  name: rhdh-setup-sa
+  namespace: {{ .Values.operators.developerHub.namespace }}
+{{- else }}
+---
+# ConfigMap to indicate RHDH operator already exists
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rhdh-operator-exists
+  namespace: {{ .Values.operators.developerHub.namespace }}
+  labels:
+    {{- include "fusion-developer-hub.labels" . | nindent 4 }}
+  annotations:
+    {{- if not .Values.argocd.enabled }}
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: "-10"
+    {{- end }}
+    argocd.argoproj.io/sync-wave: "0"
+data:
+  message: "RHDH operator already exists in the cluster - skipping installation"
+  subscription: "{{ .Values.operators.developerHub.namespace }}/rhdh-operator"
+{{- end }}
+{{- end }}
+{{- end }}
+
+# Made with Bob

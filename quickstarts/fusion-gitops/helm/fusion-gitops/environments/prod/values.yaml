@@ -1,0 +1,157 @@
+# Production Environment Values for Fusion GitOps
+# Optimized for production workloads with HA and enhanced resources
+
+# Use existing storage classes
+storage:
+  defaultStorageClass: ocs-storagecluster-cephfs
+  sharedStorageClass: ocs-storagecluster-cephfs
+
+# ArgoCD configuration - production settings
+argocd:
+  enabled: true
+  
+  server:
+    replicas: 3
+    autoscale:
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 5
+      targetCPUUtilizationPercentage: 70
+      targetMemoryUtilizationPercentage: 75
+    resources:
+      requests:
+        cpu: 1000m
+        memory: 1Gi
+      limits:
+        cpu: 2000m
+        memory: 2Gi
+  
+  repo:
+    replicas: 3
+    autoscale:
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 5
+      targetCPUUtilizationPercentage: 70
+      targetMemoryUtilizationPercentage: 75
+    resources:
+      requests:
+        cpu: 1000m
+        memory: 2Gi
+      limits:
+        cpu: 2000m
+        memory: 4Gi
+    storage:
+      enabled: true
+      size: 50Gi
+      storageClassName: ocs-storagecluster-cephfs
+      accessModes:
+        - ReadWriteMany
+    env:
+      - name: ARGOCD_EXEC_TIMEOUT
+        value: "300s"
+      - name: ARGOCD_GIT_ATTEMPTS_COUNT
+        value: "5"
+  
+  controller:
+    replicas: 2
+    sharding:
+      enabled: true
+      replicas: 2
+    resources:
+      requests:
+        cpu: 2000m
+        memory: 4Gi
+      limits:
+        cpu: 4000m
+        memory: 8Gi
+    env:
+      - name: ARGOCD_RECONCILIATION_TIMEOUT
+        value: "300s"
+      - name: ARGOCD_REPO_SERVER_TIMEOUT_SECONDS
+        value: "300"
+  
+  redis:
+    resources:
+      requests:
+        cpu: 500m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+  
+  ha:
+    enabled: true
+    resources:
+      requests:
+        cpu: 250m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+  
+  dex:
+    enabled: true
+    openShiftOAuth: true
+    resources:
+      requests:
+        cpu: 250m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+  
+  rbac:
+    defaultPolicy: 'role:readonly'
+    policy: |
+      g, system:cluster-admins, role:admin
+      g, cluster-admins, role:admin
+      # Add production RBAC policies here
+    scopes: '[groups]'
+  
+  notifications:
+    enabled: true
+    replicas: 2
+    resources:
+      requests:
+        cpu: 250m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+  
+  applicationSet:
+    resources:
+      requests:
+        cpu: 500m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+
+networkPolicy:
+  enabled: true
+  policyTypes:
+    - Ingress
+    - Egress
+
+resourceQuota:
+  enabled: true
+  hard:
+    requests.cpu: "20"
+    requests.memory: "40Gi"
+    limits.cpu: "40"
+    limits.memory: "80Gi"
+    persistentvolumeclaims: "20"
+    requests.storage: "200Gi"
+
+monitoring:
+  enabled: true
+  prometheus:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      interval: 30s
+      scrapeTimeout: 10s
+
+# Made with Bob

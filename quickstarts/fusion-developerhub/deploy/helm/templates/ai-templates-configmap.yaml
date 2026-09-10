@@ -1,0 +1,41 @@
+{{- if .Values.developerHub.enabled }}
+---
+# AI Templates ConfigMap
+# This ConfigMap provides the catalog locations for Red Hat AI Lab templates
+# Following the pattern from https://github.com/redhat-ai-dev/ai-rhdh-installer
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config-ai-templates
+  namespace: {{ include "fusion-developer-hub.namespace" . }}
+  labels:
+    {{- include "fusion-developer-hub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ai-templates
+  annotations:
+    argocd.argoproj.io/sync-wave: "50"
+data:
+  app-config-ai-templates.yaml: |
+    catalog:
+      locations:
+        {{- if .Values.developerHub.catalog.naas.enabled }}
+        # NaaS (Namespace-as-a-Service) Software Template
+        {{- $naasHost := .Values.developerHub.catalog.github.enterpriseHost | default "github.com" }}
+        {{- $naasOrg := .Values.developerHub.catalog.github.target | trimSuffix "/" }}
+        {{- $naasRepo := .Values.developerHub.catalog.naas.repoName }}
+        {{- $naasBranch := .Values.developerHub.catalog.naas.templateBranch }}
+        {{- $naasPath := .Values.developerHub.catalog.naas.templatePath }}
+        - type: url
+          target: https://{{ $naasHost }}/{{ $naasOrg | trimPrefix (printf "https://%s/" $naasHost) }}/{{ $naasRepo }}/blob/{{ $naasBranch }}/{{ $naasPath }}
+          rules:
+            - allow: [Template]
+        {{- end }}
+        {{- if .Values.developerHub.fusion.ai.rhoaiConnector.enabled }}
+        # Red Hat AI Lab Templates - only when RHOAI connector is enabled
+        - type: url
+          target: https://github.com/redhat-ai-dev/ai-lab-template/blob/main/all.yaml
+          rules:
+            - allow: [Template]
+        {{- end }}
+{{- end }}
+
+# Made with Bob

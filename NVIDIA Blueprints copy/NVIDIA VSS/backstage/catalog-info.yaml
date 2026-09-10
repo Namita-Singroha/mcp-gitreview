@@ -1,0 +1,49 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: nvidia-vss-blueprint
+  title: NVIDIA VSS Blueprint on IBM Fusion HCI
+  description: |
+    NVIDIA Video Search and Summarization (VSS) is a validated AI blueprint that transforms video archives into a queryable knowledge base — ingest footage, generate AI-powered timestamped captions, and ask questions in natural language. Ask "what happened during the morning shift?" and get an answer with timestamps, without scrubbing through hours of footage. Deployed on IBM Fusion HCI using NVIDIA NIM microservices. This card covers v2 (latest); the original v1 deployment guide is also available on IBM Tech Exchange.
+
+    How it works:
+    - Video is split into chunks and processed in parallel across GPUs
+    - A Vision Language Model (VLM) generates timestamped natural language captions per chunk
+    - Captions are embedded and indexed in a vector store for semantic search
+    - At query time, retrieves the most relevant captions, re-ranks them, and passes context to the LLM
+    - LLM generates a grounded answer with timestamps — fully traceable to source footage
+
+    What makes it production-ready:
+    - Bring-your-own model endpoints — connect your own VLM and LLM services
+    - IBM-mirrored container images (icr.io/cp/fsh) — air-gap ready, no NGC pull required
+    - Dedicated offline deployment scripts for air-gapped clusters
+    - Deployed directly from the OpenShift Software Catalog — no Helm CLI required
+
+    Why IBM Fusion HCI:
+    - Converged compute and storage — GPU nodes and NVMe storage on the same platform
+    - Predictable GPU scheduling via Red Hat OpenShift with the NVIDIA GPU Operator
+    - Unified environment where multiple AI blueprints (RAG, AI-Q, VSS) coexist on one cluster
+    - IBM Fusion Data Foundation provides the RWO and RWX storage VSS requires out of the box
+  tags:
+    - nvidia
+    - blueprint
+    - fusion
+    - video-analytics
+  annotations:
+    backstage.io/techdocs-ref: dir:.
+    github.com/project-slug: IBM/storage-fusion
+  links:
+    - url: https://community.ibm.com/community/user/blogs/namita-singroha/2026/08/26/unlocking-ai-powered-video-analytics-on-ibm-fusion
+      title: Read the IBM Tech Exchange Blog
+      icon: article
+    - url: https://ibm.github.io/storage-fusion/fusion-ai/resources/
+      title: Explore on Fusion Tech Community
+      icon: web
+    - url: https://build.nvidia.com/nvidia/video-search-and-summarization
+      title: Explore on NVIDIA Blueprint Catalog
+      icon: launch
+spec:
+  type: blueprint
+  lifecycle: production
+  owner: group:default/fusion-platform-team
+  system: fusion-ai-services

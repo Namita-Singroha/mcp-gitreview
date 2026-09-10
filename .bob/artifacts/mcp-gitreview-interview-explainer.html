@@ -1,0 +1,287 @@
+
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>mcp-gitreview — Interview Explainer</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #1f2328;
+    background: #ffffff;
+    padding: 32px 16px 48px;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; }
+  h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .subtitle { color: #57606a; font-size: 13px; margin-bottom: 32px; }
+
+  section { margin-bottom: 28px; }
+  h2 {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #57606a;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 6px;
+    margin-bottom: 14px;
+  }
+
+  .card {
+    background: #f7f8fa;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 16px 18px;
+    margin-bottom: 12px;
+  }
+  .card p { margin-bottom: 0; }
+
+  .flow {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .step {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 10px 0;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  .step:last-child { border-bottom: none; }
+  .step-num {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #3b82d4;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 2px;
+  }
+  .step-text strong { font-weight: 600; }
+  .step-text small { color: #57606a; font-size: 12px; display: block; }
+
+  .tool-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .tool {
+    background: #f7f8fa;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+  .tool code {
+    font-family: "SF Mono", "Fira Code", monospace;
+    font-size: 12px;
+    color: #3b82d4;
+    font-weight: 600;
+    display: block;
+    margin-bottom: 2px;
+  }
+  .tool span { color: #57606a; font-size: 12px; }
+
+  .layer-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .layer-table th {
+    text-align: left;
+    font-weight: 600;
+    padding: 8px 10px;
+    background: #f7f8fa;
+    border: 1px solid #e5e7eb;
+    color: #57606a;
+    font-size: 12px;
+  }
+  .layer-table td {
+    padding: 8px 10px;
+    border: 1px solid #e5e7eb;
+    vertical-align: top;
+  }
+  .layer-table tr:nth-child(even) td { background: #f7f8fa; }
+
+  .qa { margin-bottom: 14px; }
+  .qa .q {
+    font-weight: 600;
+    color: #1f2328;
+    margin-bottom: 4px;
+  }
+  .qa .a {
+    color: #3b3f44;
+    padding-left: 12px;
+    border-left: 3px solid #3b82d4;
+  }
+
+  .tag {
+    display: inline-block;
+    background: #eef2fb;
+    color: #3b82d4;
+    border-radius: 4px;
+    padding: 2px 7px;
+    font-size: 11px;
+    font-weight: 600;
+    margin: 2px 2px 2px 0;
+  }
+  .tag.go { background: #e6f4ea; color: #2e7d32; }
+  .tag.design { background: #fef3cd; color: #92600a; }
+
+  footer {
+    margin-top: 48px;
+    padding-top: 14px;
+    border-top: 1px solid #e5e7eb;
+    text-align: center;
+    color: #57606a;
+    font-size: 12px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>mcp-gitreview</h1>
+  <p class="subtitle">A personal project — interview explainer cheat sheet</p>
+
+  
+  <section>
+    <h2>One-Liner (say this first)</h2>
+    <div class="card">
+      <p>"I built an MCP server in Go that lets AI assistants like Claude query GitHub repositories using natural language — things like listing commits, branches, PRs, and repo stats — without the AI needing direct access to git or the GitHub API."</p>
+    </div>
+  </section>
+
+  
+  <section>
+    <h2>The Problem it Solves</h2>
+    <div class="card">
+      <p>AI chat assistants are powerful but have no built-in awareness of your GitHub repos. You'd have to copy-paste commit logs or PR lists manually into the chat. This project plugs that gap by giving the AI a structured set of tools it can call autonomously to fetch live repo data on demand.</p>
+    </div>
+  </section>
+
+  
+  <section>
+    <h2>How it Works — End to End</h2>
+    <div class="flow">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-text">
+          <strong>You run the binary.</strong>
+          <small>It starts an MCP server over stdio — the standard transport Claude Desktop uses to talk to local tools.</small>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-text">
+          <strong>You ask Claude in plain English.</strong>
+          <small>e.g. "Show me the open PRs in kubernetes/kubernetes"</small>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-text">
+          <strong>Claude calls <code style="font-family:monospace;color:#3b82d4">set_github_repository</code> first (if no repo is set).</strong>
+          <small>The server stores the repo name in a thread-safe in-memory context.</small>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-text">
+          <strong>Claude calls the relevant tool, e.g. <code style="font-family:monospace;color:#3b82d4">list_pull_requests</code>.</strong>
+          <small>The tool handler reads the repo from context, makes a live GitHub REST API call, formats the result as plain text.</small>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">5</div>
+        <div class="step-text">
+          <strong>The formatted string is returned to Claude, which presents it to you.</strong>
+          <small>No UI needed — the LLM handles the presentation layer.</small>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  
+  <section>
+    <h2>Exposed MCP Tools</h2>
+    <div class="tool-grid">
+      <div class="tool"><code>set_github_repository</code><span>Set/switch the active repo</span></div>
+      <div class="tool"><code>set_github_token</code><span>Add a PAT for private repos (auto-expires in 1h)</span></div>
+      <div class="tool"><code>list_commits</code><span>Last 10 commits with SHA + author</span></div>
+      <div class="tool"><code>list_branches</code><span>All branches</span></div>
+      <div class="tool"><code>get_latest_commit_message</code><span>Most recent commit message</span></div>
+      <div class="tool"><code>get_repository_details</code><span>Stars, forks, open issues, description</span></div>
+      <div class="tool"><code>list_pull_requests</code><span>Open PRs with author + URL</span></div>
+    </div>
+  </section>
+
+  
+  <section>
+    <h2>Code Structure — 3 Layers</h2>
+    <table class="layer-table">
+      <thead>
+        <tr><th>Package</th><th>Responsibility</th><th>Key Design Point</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>internal/github</code></td>
+          <td>GitHub REST API client — HTTP requests, auth header injection, JSON decoding</td>
+          <td>Token is a <em>function</em> (<code>TokenProvider</code>), not a value — so it's always evaluated fresh (catches expiry)</td>
+        </tr>
+        <tr>
+          <td><code>internal/server</code></td>
+          <td>Holds session state: active repo + token</td>
+          <td><code>sync.RWMutex</code> for concurrency safety; token has a TTL (expires after 1 hour)</td>
+        </tr>
+        <tr>
+          <td><code>internal/tools</code></td>
+          <td>Registers each MCP tool with its handler</td>
+          <td>All tools share a <code>requireRepo</code> helper — fail fast with a clear message if no repo is set</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  
+  <section>
+    <h2>Design Decisions Worth Mentioning</h2>
+    <div class="qa">
+      <div class="q">Why stdio transport?</div>
+      <div class="a">MCP over stdio is the standard for local tools in Claude Desktop — no network port, no auth complexity, just a long-lived process communicating via stdin/stdout.</div>
+    </div>
+    <div class="qa">
+      <div class="q">Why store state in a server-side context instead of passing repo per call?</div>
+      <div class="a">Better UX — the LLM only needs to set the repo once per session. It mirrors how a human "switches context" to a repo and then runs multiple queries against it.</div>
+    </div>
+    <div class="qa">
+      <div class="q">Why is the token a function (TokenProvider) instead of a plain string?</div>
+      <div class="a">Lazy evaluation — the token is checked at call time, so if it has expired between when it was set and when a tool runs, it returns empty and the API call fails gracefully rather than silently using a stale token.</div>
+    </div>
+    <div class="qa">
+      <div class="q">Why no default repo?</div>
+      <div class="a">Intentional — forces the LLM to ask the user which repo they want, rather than silently operating on a wrong default.</div>
+    </div>
+  </section>
+
+  
+  <section>
+    <h2>Tech Stack</h2>
+    <span class="tag go">Go</span>
+    <span class="tag">MCP (Model Context Protocol)</span>
+    <span class="tag">GitHub REST API</span>
+    <span class="tag">stdio transport</span>
+    <span class="tag go">sync.RWMutex</span>
+    <span class="tag design">Functional options pattern</span>
+    <span class="tag design">TTL-based token expiry</span>
+  </section>
+
+  <footer>Made with IBM Bob</footer>
+</div>
+</body>
+</html>
