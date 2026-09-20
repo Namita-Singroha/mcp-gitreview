@@ -1,8 +1,29 @@
 [
   {
     "label": "Getting started with Model-as-a-Service on Fusion",
-    "description": "Deploy a Model-as-a-Service stack on IBM Fusion with Red Hat OpenShift AI: install OpenShift AI operators, connect Fusion object storage, stand up a Model Registry, deploy GPU-backed inference, expose models through a gateway, and validate a live inference endpoint.",
-    "url": "https://community.ibm.com/community/user/blogs/harichandana-kotha/2026/05/27/quickstart-model-as-a-service-on-ibm-fusion",
+    "description": "Deploy the full MaaS platform on IBM Fusion HCI with GitOps: install OpenShift AI operators, connect Fusion object storage, stand up a Model Registry, deploy GPU-backed inference, expose models through an API gateway, and validate a live endpoint.",
+    "url": "https://community.ibm.com/community/user/blogs/harichandana-kotha/2026/06/29/quickstart-maas-ibm-fusion-gitops",
+    "paths": 1,
+    "hours": 1
+  },
+  {
+    "label": "Configure subscription-based model governance on Fusion MaaS",
+    "description": "Put access control and quota management in place for your running models: deploy MaaSSubscription and MaaSAuthPolicy resources with the maas-config Helm chart via ArgoCD, create API keys, and enforce per-group token rate limits through the gateway.",
+    "url": "https://community.ibm.com/community/user/blogs/harichandana-kotha/2026/07/27/model-governance",
+    "paths": 1,
+    "minutes": 45
+  },
+  {
+    "label": "CPU-based LLM inference on Fusion with GitOps",
+    "description": "Deploy small open-source language models (Qwen2.5, SmolLM2) on standard x86 CPU nodes using the vLLM CPU ServingRuntime for KServe — no GPU required. All resources are declared in Git and reconciled by ArgoCD on IBM Fusion.",
+    "url": "https://community.ibm.com/community/user/blogs/harichandana-kotha/2026/08/25/cpu-based-llm-inference-ibm-fusion-gitops",
+    "paths": 1,
+    "minutes": 45
+  },
+  {
+    "label": "Build an agentic chat assistant on Fusion AI",
+    "description": "Deploy a production-ready React + FastAPI chat application on IBM Fusion using ArgoCD, HashiCorp Vault, External Secrets Operator, and Stakater Reloader — with automated secret rotation, unified model selection across gateway and KServe, and RAG-powered responses via CAS.",
+    "url": "https://community.ibm.com/community/user/blogs/harichandana-kotha/2026/08/25/deploying-agentic-chat-assistant-with-gitops",
     "paths": 1,
     "hours": 1
   },
