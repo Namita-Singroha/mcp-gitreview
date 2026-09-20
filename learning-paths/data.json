@@ -104,5 +104,12 @@
     "url": "https://community.ibm.com/community/user/blogs/christo-abraham/2026/05/27/fusion-gitops-quickstart",
     "paths": 1,
     "minutes": 45
+  },
+  {
+    "label": "Understanding IBM Fusion's AI Data Platform for inference",
+    "description": "Learn why unified namespace, AFM data federation, and CAS auto-refreshed embeddings matter for AI inference cost and quality, and how to size NVMe working sets versus federated capacity storage to cut token economics.",
+    "url": "https://community.ibm.com/community/user/blogs/matthew-geiser1/2026/01/25/ibm-fusion-delivering-an-ai-data-platform",
+    "paths": 1,
+    "minutes": 30
   }
 ]
