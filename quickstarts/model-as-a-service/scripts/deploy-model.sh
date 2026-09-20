@@ -153,6 +153,70 @@ fi
 echo -e "${GREEN}✓ Prerequisites check passed${NC}"
 echo ""
 
+# ── GPU Vendor Consistency Validation ────────────────────────────────────────
+# Reads accelerator.vendor from the values file and:
+#   1. Validates the vendor value is 'nvidia' or 'amd'
+#   2. Confirms that vendor's GPU is actually allocatable on the cluster
+#      (uses node.status.allocatable — NOT labels)
+#   3. Warns if the declared inference image is inconsistent with the vendor
+echo "Validating GPU vendor configuration..."
+ACCEL_VENDOR=$(grep -A3 "^accelerator:" "$MODEL_VALUES_FILE" 2>/dev/null \
+    | grep "^\s*vendor:" | head -1 | awk '{print $2}' | tr -d '"' | tr -d "'" | xargs)
+
+if [[ -n "$ACCEL_VENDOR" ]]; then
+    # Validate vendor value
+    if [[ "$ACCEL_VENDOR" != "nvidia" && "$ACCEL_VENDOR" != "amd" ]]; then
+        echo -e "${RED}Error: accelerator.vendor must be 'nvidia' or 'amd', got: '$ACCEL_VENDOR'${NC}"
+        exit 1
+    fi
+
+    # Check declared vendor has allocatable GPUs on the cluster
+    if [[ "$ACCEL_VENDOR" == "amd" ]]; then
+        AMD_AVAILABLE=$(oc get nodes \
+            -o jsonpath='{range .items[*]}{.status.allocatable.amd\.com/gpu}{"\n"}{end}' \
+            2>/dev/null | grep -v '^$' | grep -v '^0$' | wc -l | tr -d ' ')
+        if [[ "$AMD_AVAILABLE" -eq 0 ]]; then
+            echo -e "${RED}Error: accelerator.vendor=amd but no amd.com/gpu allocatable on any cluster node.${NC}"
+            echo "  Ensure isf-compute-operator has completed AMD GPU enablement before deploying."
+            echo "  Check: oc get nodes -o custom-columns='NODE:.metadata.name,AMD:.status.allocatable.amd\\.com/gpu'"
+            exit 1
+        fi
+        echo -e "${GREEN}✓ AMD GPU available: $AMD_AVAILABLE node(s) with amd.com/gpu allocatable${NC}"
+    fi
+
+    if [[ "$ACCEL_VENDOR" == "nvidia" ]]; then
+        NVIDIA_AVAILABLE=$(oc get nodes \
+            -o jsonpath='{range .items[*]}{.status.allocatable.nvidia\.com/gpu}{"\n"}{end}' \
+            2>/dev/null | grep -v '^$' | grep -v '^0$' | wc -l | tr -d ' ')
+        if [[ "$NVIDIA_AVAILABLE" -eq 0 ]]; then
+            echo -e "${RED}Error: accelerator.vendor=nvidia but no nvidia.com/gpu allocatable on any cluster node.${NC}"
+            echo "  Check: oc get nodes -o custom-columns='NODE:.metadata.name,NVIDIA:.status.allocatable.nvidia\\.com/gpu'"
+            exit 1
+        fi
+        echo -e "${GREEN}✓ NVIDIA GPU available: $NVIDIA_AVAILABLE node(s) with nvidia.com/gpu allocatable${NC}"
+    fi
+
+    # Image / vendor consistency warning
+    INFERENCE_IMAGE=$(grep -A30 "^inference:" "$MODEL_VALUES_FILE" 2>/dev/null \
+        | grep "^\s*image:" | head -1 | awk '{print $2}' | tr -d '"' | xargs)
+    if [[ -n "$INFERENCE_IMAGE" ]]; then
+        if [[ "$ACCEL_VENDOR" == "amd" && "$INFERENCE_IMAGE" == *"cuda"* ]]; then
+            echo -e "${YELLOW}⚠ Warning: accelerator.vendor=amd but inference image appears CUDA-based: $INFERENCE_IMAGE${NC}"
+            echo "  Consider using a ROCm-compatible image (e.g. vllm-rocm-rhel9) for AMD GPU workloads."
+        fi
+        if [[ "$ACCEL_VENDOR" == "nvidia" && "$INFERENCE_IMAGE" == *"rocm"* ]]; then
+            echo -e "${YELLOW}⚠ Warning: accelerator.vendor=nvidia but inference image appears ROCm-based: $INFERENCE_IMAGE${NC}"
+            echo "  Consider using a CUDA-compatible image (e.g. vllm-cuda-rhel9) for NVIDIA GPU workloads."
+        fi
+    fi
+
+    echo -e "${GREEN}✓ GPU vendor validation passed: accelerator.vendor=$ACCEL_VENDOR${NC}"
+else
+    echo -e "${YELLOW}⚠ accelerator.vendor not set in values file.${NC}"
+    echo "  GPU scheduling may fail. Set accelerator.vendor: nvidia or accelerator.vendor: amd"
+fi
+echo ""
+
 # Extract model name from values file if release name not provided
 if [ -z "$RELEASE_NAME" ]; then
     RELEASE_NAME=$(grep "^  name:" "$MODEL_VALUES_FILE" | head -1 | awk '{print $2}' | tr -d '"')

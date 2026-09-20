@@ -38,7 +38,7 @@ reconciler:
     reconcileInterval: 600
     
     # Log level (DEBUG, INFO, WARNING, ERROR)
-    logLevel: WARNING
+    logLevel: DEBUG
   
   # Resource limits and requests - higher for production
   resources:
@@ -53,7 +53,7 @@ reconciler:
 buildConfig:
   # Git repository configuration
   git:
-    ref: main  # Use main branch for production
+    ref: main
 
 # CronJob for Git sync
 cronJob:

@@ -13,9 +13,9 @@ spec:
   project: fusion-vllm-cpu-model-deploy-dev
 
   source:
-    repoURL: https://github.com/IBM/storage-fusion.git
-    targetRevision: master
-    path: AI/quickstarts/model-as-a-service/deploy/helm/model-deploy-vllm-cpu
+    repoURL: https://github.ibm.com/ProjectAbell/Fusion-AI.git
+    targetRevision: main
+    path: quickstarts/model-as-a-service/deploy/helm/model-deploy-vllm-cpu
     helm:
       valueFiles:
         - values.yaml

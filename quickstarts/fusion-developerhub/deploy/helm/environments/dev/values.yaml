@@ -355,6 +355,12 @@ developerHub:
           rules:
             - allow: [Component]
 
+        # Namespace-as-a-Service Quickstart (TEST — mcp-gitreview, move to storage-fusion when ready)
+        - type: url
+          target: https://github.com/Namita-Singroha/mcp-gitreview/blob/main/quickstarts/fusion-developerhub/templates/naas/backstage/catalog-info.yaml
+          rules:
+            - allow: [Component]
+
         # Storage Fusion Repository
         - type: url
           target: https://github.com/IBM/storage-fusion/blob/master/catalog-info.yaml

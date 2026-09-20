@@ -587,7 +587,21 @@ data:
                     - label: Tokyo
                       timeZone: Asia/Tokyo
     {{- end }}
-    
+
+    {{- $lpEnabled := and .Values.developerHub.config.homepage .Values.developerHub.config.homepage.learningPaths .Values.developerHub.config.homepage.learningPaths.enabled }}
+    {{- if $lpEnabled }}
+    # Learning Paths proxy — must be declared BEFORE the broader /developer-hub
+    # (homepage) rewrite to prevent pathRewrite shadowing.
+    proxy:
+      endpoints:
+        '/developer-hub':
+          target: {{ .Values.developerHub.config.homepage.learningPaths.githubRawBaseUrl | quote }}
+          pathRewrite:
+            '^/api/proxy/developer-hub/learning-paths': {{ .Values.developerHub.config.homepage.learningPaths.dataJsonPath | quote }}
+          changeOrigin: true
+          secure: true
+    {{- end }}
+
     {{- if .Values.developerHub.catalog.enabled }}
     catalog:
       import:
@@ -814,15 +828,11 @@ spec:
         {{- if .Values.developerHub.fusion.enabled }}
         - name: fusion-templates
         {{- end }}
+        {{- if and .Values.developerHub.fusion.ai .Values.developerHub.fusion.ai.rhoaiConnector .Values.developerHub.fusion.ai.rhoaiConnector.enabled }}
         - name: app-config-ai-templates
+        {{- end }}
         {{- if .Values.developerHub.enabled }}
         - name: app-config-fusion-blueprints
-        {{- end }}
-        {{- if and .Values.developerHub.enabled .Values.developerHub.fusionServices.enabled }}
-        {{- /* Fusion AI Services — app-config ONLY (catalog locations, rules, k8s, proxy) */}}
-        {{- /* NOTE: catalog entity files (multi-doc YAML) must NOT be in appConfig.configMaps */}}
-        {{- /* They go into extraFiles.configMaps below — mounted as files, not loaded as config */}}
-        - name: app-config-fusion-services
         {{- end }}
         {{- if and .Values.developerHub.enabled .Values.developerHub.fusionServices.enabled }}
         {{- /* Fusion AI Services — app-config ONLY (catalog locations, rules, k8s, proxy) */}}
@@ -999,6 +1009,15 @@ spec:
                   - name: homepage-data
                     mountPath: /opt/app-root/src/packages/app/dist/homepage/icons/nvidia-green.svg
                     subPath: nvidia-green.svg
+                  - name: homepage-data
+                    mountPath: /opt/app-root/src/packages/app/dist/homepage/icons/naas-guide-icon.svg
+                    subPath: naas-guide-icon.svg
+                  - name: homepage-data
+                    mountPath: /opt/app-root/src/packages/app/dist/homepage/icons/naas-template-icon.svg
+                    subPath: naas-template-icon.svg
+                  - name: homepage-data
+                    mountPath: /opt/app-root/src/packages/app/dist/homepage/icons/maas-cap-icon.svg
+                    subPath: maas-cap-icon.svg
                   # Backward-compat mount: community-icon.png path resolves to ai-models-icon.png
                   # to avoid 404s from any existing iconUrl references.
                   - name: homepage-data
@@ -1022,6 +1041,10 @@ spec:
                   - name: fusion-ai-services-templates
                     mountPath: /opt/app-root/src/add-dcs-cluster-template.yaml
                     subPath: add-dcs-cluster-template.yaml
+                  - name: fusion-ai-services-templates
+                    mountPath: /opt/app-root/src/add-wxo-instance-template.yaml
+                    subPath: add-wxo-instance-template.yaml
+
                   {{- end }}
         {{- end }}
   

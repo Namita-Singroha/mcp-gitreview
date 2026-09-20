@@ -10,7 +10,7 @@ spec:
   
   # Source repositories
   sourceRepos:
-    - https://github.com/IBM/storage-fusion.git
+    - https://github.ibm.com/ProjectAbell/Fusion-AI.git
     - '*'  # Allow all repos for flexibility
   
   # Destination clusters and namespaces

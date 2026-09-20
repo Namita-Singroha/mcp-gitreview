@@ -325,14 +325,14 @@ helm install granite-model \
 ### Learning Resources
 
 📚 **Continue the Series**:
-- **Part 2**: [Customizing Your OpenShift AI Deployment](MAAS_PLATFORM_CUSTOMIZATION_GUIDE.md)
-- **Part 3**: [Deploying and Managing AI Models](../03-model-deployment/DEPLOYING_MODEL_SERVICES.md)
+- **Part 2**: [Customizing Your OpenShift AI Deployment](https://github.ibm.com/ProjectAbell/Fusion-AI/blob/main/quickstarts/model-as-a-service/docs/01-setup/MAAS_PLATFORM_CUSTOMIZATION_GUIDE.md)
+- **Part 3**: [Deploying and Managing AI Models](https://github.ibm.com/ProjectAbell/Fusion-AI/blob/main/quickstarts/model-as-a-service/docs/03-model-deployment/DEPLOYING_MODEL_SERVICES.md)
 - **Part 4**: Production Best Practices and Troubleshooting
 
 🔗 **Related Guides**:
-- [Getting Started Guide](../GETTING_STARTED.md) - Complete platform overview
-- [Model Registry Guide](../02-model-catalog-and-registry/ADDING_MODELS_TO_REGISTRY.md) - Version control for models
-- [Deployment Order](DEPLOYMENT_ORDER.md) - Understanding the full stack
+- [Getting Started Guide](https://github.ibm.com/ProjectAbell/Fusion-AI/blob/main/quickstarts/model-as-a-service/docs/GETTING_STARTED.md) - Complete platform overview
+- [Model Registry Guide](https://github.ibm.com/ProjectAbell/Fusion-AI/blob/main/quickstarts/model-as-a-service/docs/02-model-catalog-and-registry/ADDING_MODELS_TO_REGISTRY.md) - Version control for models
+- [Deployment Order](https://github.ibm.com/ProjectAbell/Fusion-AI/blob/main/quickstarts/model-as-a-service/docs/01-setup/DEPLOYMENT_ORDER.md) - Understanding the full stack
 
 ### Join the Community
 
@@ -707,5 +707,5 @@ This is just the beginning. With your operator foundation in place, you're ready
 - Implement MLOps pipelines
 - Scale to enterprise workloads
 
-**Ready for the next step?** Check out [Part 2: Customizing Your OpenShift AI Deployment](MAAS_PLATFORM_CUSTOMIZATION_GUIDE.md) to configure your platform for production use.
+**Ready for the next step?** Check out [Part 2: Customizing Your OpenShift AI Deployment](https://github.ibm.com/ProjectAbell/Fusion-AI/blob/main/quickstarts/model-as-a-service/docs/01-setup/MAAS_PLATFORM_CUSTOMIZATION_GUIDE.md) to configure your platform for production use.
 

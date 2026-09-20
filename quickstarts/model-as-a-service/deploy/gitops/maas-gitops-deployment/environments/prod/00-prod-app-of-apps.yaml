@@ -14,9 +14,9 @@ spec:
   project: fusion-maas-platform-prod
   
   source:
-    repoURL: https://github.com/IBM/storage-fusion.git
-    targetRevision: master  # Consider using tags/releases for production
-    path: AI/quickstarts/model-as-a-service/deploy/gitops/maas-gitops-deployment/environments/prod/applications
+    repoURL: https://github.ibm.com/ProjectAbell/Fusion-AI.git
+    targetRevision: main
+    path: quickstarts/model-as-a-service/deploy/gitops/maas-gitops-deployment/environments/prod/applications
   
   destination:
     server: https://kubernetes.default.svc

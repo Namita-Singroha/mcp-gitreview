@@ -87,7 +87,7 @@ By the end of this guide, you'll be able to:
 
 This guide assumes you have the OpenShift AI operators already installed. If you haven't done this yet:
 
-**Option 1**: Follow our [complete operators installation guide](MAAS_OPERATORS_GUIDE.md) (15 minutes)
+**Option 1**: Follow our [complete operators installation guide](https://github.ibm.com/ProjectAbell/Fusion-AI/blob/main/quickstarts/model-as-a-service/docs/01-setup/MAAS_OPERATORS_GUIDE.md) (15 minutes)
 
 **Option 2**: Quick install if you're already familiar with OpenShift:
 ```bash
@@ -109,7 +109,7 @@ oc get csv -A | grep -E "rhods-operator|kuadrant|cert-manager|leader-worker"
 - ✅ Helm 3.x installed
 - ✅ Basic understanding of Kubernetes/OpenShift concepts
 
-**Don't have operators installed?** No problem—check out our [operators guide](MAAS_OPERATORS_GUIDE.md) first, then come back here.
+**Don't have operators installed?** No problem—check out our [operators guide](https://github.ibm.com/ProjectAbell/Fusion-AI/blob/main/quickstarts/model-as-a-service/docs/01-setup/MAAS_OPERATORS_GUIDE.md) first, then come back here.
 
 ---
 
@@ -904,17 +904,17 @@ oc get route -n redhat-ods-applications rhods-dashboard -o jsonpath='{.spec.host
 ### Learning Path
 
 📚 **Continue the Series**:
-- **Part 1**: [Operators Installation](MAAS_OPERATORS_GUIDE.md) ✅ Complete
+- **Part 1**: [Operators Installation](https://github.ibm.com/ProjectAbell/Fusion-AI/blob/main/quickstarts/model-as-a-service/docs/01-setup/MAAS_OPERATORS_GUIDE.md) ✅ Complete
 - **Part 2**: Platform Customization ✅ You are here
-- **Part 3**: [Runtime Configuration](MAAS_RUNTIME_CUSTOMIZATION_GUIDE.md) ← **Next Step**
-- **Part 4**: [Deploying Models](../03-model-deployment/DEPLOYING_MODEL_SERVICES.md)
+- **Part 3**: [Runtime Configuration](https://github.ibm.com/ProjectAbell/Fusion-AI/blob/main/quickstarts/model-as-a-service/docs/01-setup/MAAS_RUNTIME_CUSTOMIZATION_GUIDE.md) ← **Next Step**
+- **Part 4**: [Deploying Models](https://github.ibm.com/ProjectAbell/Fusion-AI/blob/main/quickstarts/model-as-a-service/docs/03-model-deployment/DEPLOYING_MODEL_SERVICES.md)
 
-**Ready for the next step?** Continue with the [Runtime Customization Guide](MAAS_RUNTIME_CUSTOMIZATION_GUIDE.md) to configure model registry, gateway, and runtime components for your AI platform.
+**Ready for the next step?** Continue with the [Runtime Customization Guide](https://github.ibm.com/ProjectAbell/Fusion-AI/blob/main/quickstarts/model-as-a-service/docs/01-setup/MAAS_RUNTIME_CUSTOMIZATION_GUIDE.md) to configure model registry, gateway, and runtime components for your AI platform.
 
 🔗 **Related Guides**:
-- [Model Registry Setup](../02-model-catalog-and-registry/ADDING_MODELS_TO_REGISTRY.md)
-- [Workbench Configuration](../04-workbench-configuration/WORKBENCH_STORAGE_GUIDE.md)
-- [Deployment Order](DEPLOYMENT_ORDER.md)
+- [Model Registry Setup](https://github.ibm.com/ProjectAbell/Fusion-AI/blob/main/quickstarts/model-as-a-service/docs/02-model-catalog-and-registry/ADDING_MODELS_TO_REGISTRY.md)
+- [Workbench Configuration](https://github.ibm.com/ProjectAbell/Fusion-AI/blob/main/quickstarts/model-as-a-service/docs/04-workbench-configuration/WORKBENCH_STORAGE_GUIDE.md)
+- [Deployment Order](https://github.ibm.com/ProjectAbell/Fusion-AI/blob/main/quickstarts/model-as-a-service/docs/01-setup/DEPLOYMENT_ORDER.md)
 
 ### Best Practices Checklist
 

@@ -31,8 +31,8 @@ project:
 # -----------------------------------------------------------------------------
 s3:
   # endpoint: "https://s3.openshift-storage.svc:443"
-  # region: "us-south"
-  # bucket: "model-registry-artifacts-p-ccc9b6a9-897a-4971-9161-9c0d25448836"
+  # region: ""
+  # bucket: ""
   # modelPath: "tiny-llama-test/1.0.0"
   accessKeyId: ""        # supply via --set or sealed-secret
   secretAccessKey: ""    # supply via --set or sealed-secret
@@ -47,20 +47,46 @@ inference:
   replicas: 1
 
 # -----------------------------------------------------------------------------
-# Resource Allocation
+# Accelerator Configuration
+# -----------------------------------------------------------------------------
+# Uncomment ONE of the profiles below and set the correct values for your cluster.
+#
+# NVIDIA GPU profile:
+# accelerator:
+#   vendor: nvidia
+#   count: 1
+#   tolerations:
+#     - effect: NoSchedule
+#       key: nvidia.com/gpu
+#       operator: Exists
+#   nodeSelector: {}
+#   runtimeProfile: vllm-cuda
+#
+# AMD Instinct GPU profile:
+# accelerator:
+#   vendor: amd
+#   count: 1
+#   tolerations:
+#     - effect: NoSchedule
+#       key: amd.com/gpu
+#       operator: Exists
+#   nodeSelector:
+#     feature.node.kubernetes.io/amd-gpu: "true"
+#   runtimeProfile: vllm-rocm
+
+# -----------------------------------------------------------------------------
+# Resource Allocation — GPU key derived from accelerator.vendor
 # -----------------------------------------------------------------------------
 resources:
   limits:
     cpu: "2"
     memory: 4Gi
-    nvidia.com/gpu: "1"
   requests:
     cpu: "2"
     memory: 4Gi
-    nvidia.com/gpu: "1"
 
 # -----------------------------------------------------------------------------
-# Pod Scheduling
+# Pod Scheduling — non-GPU constraints only
 # -----------------------------------------------------------------------------
 scheduling:
   nodeSelector: {}
@@ -78,9 +104,9 @@ scheduling:
 # Internal URL for this model:
 #   http://openshift-ai-inference-openshift-ingress.svc.cluster.local/deploy-models-dev/<model.name>/v1/
 gateway:
-  name: openshift-ai-inference
+  name: maas-default-gateway
   namespace: openshift-ingress
-  wildcardDomain: "apps.cluster.example.com"   # TODO: replace with actual cluster domain
+  wildcardDomain: ""   # set to your cluster wildcard domain: oc get ingresses.config/cluster -o jsonpath='{.spec.domain}'
   exposeGateway: false
 
 # -----------------------------------------------------------------------------

@@ -66,20 +66,6 @@ Get the models namespace
 {{- end }}
 
 {{/*
-Get the gateway name
-*/}}
-{{- define "maas-runtime.gatewayName" -}}
-{{- .Values.gateway.name }}
-{{- end }}
-
-{{/*
-Get the gateway namespace
-*/}}
-{{- define "maas-runtime.gatewayNamespace" -}}
-{{- .Values.gateway.namespace }}
-{{- end }}
-
-{{/*
 Common annotations
 */}}
 {{- define "maas-runtime.annotations" -}}

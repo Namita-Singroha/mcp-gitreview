@@ -39,9 +39,6 @@ metadata:
     - url: https://ibm.github.io/storage-fusion/fusion-ai/resources/
       title: Explore on Fusion Tech Community
       icon: web
-    - url: https://ibm.github.io/storage-fusion/fusion-ai/model-as-a-service/
-      title: MaaS Architecture & Documentation
-      icon: docs
 spec:
   type: quickstart
   lifecycle: production

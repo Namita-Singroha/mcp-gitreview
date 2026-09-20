@@ -1,0 +1,146 @@
+apiVersion: v1
+kind: ModelVersion
+metadata:
+  name: qwen2-5-coder-1-5b-instruct-hf
+  labels:
+    model-type: public
+    source: huggingface
+    task: text-generation
+    governance-status: approved
+spec:
+  modelName: "Qwen2.5-Coder-1.5B-Instruct"
+  version: "1.0.0"
+  description: |
+    Qwen2.5-Coder-1.5B-Instruct is a code-specialised instruction-tuned language model from
+    Alibaba Cloud's Qwen family, based on the Qwen2 architecture (Qwen2ForCausalLM) with
+    1.5 billion parameters. It is fine-tuned from Qwen/Qwen2.5-Coder-1.5B for code generation,
+    code completion, and conversational coding assistance tasks.
+
+    The model is compatible with text-generation-inference and Hugging Face endpoints, supports
+    English, and is suitable for resource-constrained deployments requiring a capable coding
+    assistant. Detailed in arxiv:2409.12186 (Qwen2.5-Coder).
+
+    This version is sourced directly from Hugging Face (hf://Qwen/Qwen2.5-Coder-1.5B-Instruct)
+    and registered in the model-registry via the model catalog.
+
+  author: "Alibaba Cloud (Qwen)"
+
+  # Base model information
+  baseModel:
+    name: "Qwen/Qwen2.5-Coder-1.5B-Instruct"
+    source: "huggingface"
+    sourceUrl: "https://huggingface.co/Qwen/Qwen2.5-Coder-1.5B-Instruct"
+    version: "main"
+    license: "Apache-2.0"
+    licenseUrl: "https://www.apache.org/licenses/LICENSE-2.0"
+
+  # Governance and compliance metadata
+  governance:
+    approvedBy: "platform-team@company.com"
+    approvalDate: "2025-07-03"
+    approvalTicket: "MAAS-002"
+    licenseVerified: true
+    securityScanned: true
+    scanDate: "2025-07-03"
+    scanTool: "trivy"
+    complianceStatus: "approved"
+    restrictions:
+      - "Approved for production enterprise workloads"
+      - "Monitor outputs for unsafe code generation"
+      - "Optimised for CPU and low-resource GPU deployments"
+
+  # Model storage and artifacts
+  storage:
+    uri: "hf://Qwen/Qwen2.5-Coder-1.5B-Instruct"
+    type: "huggingface"
+    size: "3.1GB"
+    format: "safetensors"
+
+  # Model metadata and capabilities
+  metadata:
+    framework: "transformers"
+    frameworkVersion: "4.40.0"
+    modelType: "causal-lm"
+    architecture: "Qwen2"
+    parameters: "1.5B"
+    contextLength: "32768"
+    languages:
+      - "en"
+    tasks:
+      - "text-generation"
+      - "code-generation"
+      - "conversational"
+      - "instruction-following"
+      - "chat"
+
+    # Performance metrics
+    metrics:
+      perplexity: "TBD"
+
+    # Training information
+    training:
+      dataset: "Alibaba Cloud curated code and instruction-tuning datasets"
+      trainingFramework: "PyTorch"
+
+    # Hardware requirements
+    requirements:
+      minMemory: "4GB"
+      recommendedMemory: "8GB"
+      gpu: "optional"
+      minCpu: "4 cores"
+
+  # Use case and deployment information
+  useCases:
+    - name: "Code Generation"
+      description: "AI-assisted code generation and completion across multiple programming languages"
+      status: "approved"
+
+    - name: "Coding Assistant"
+      description: "Interactive coding assistant for developer tooling and IDE integration"
+      status: "approved"
+
+    - name: "Instruction Following"
+      description: "General-purpose instruction-following for code-centric enterprise workflows"
+      status: "approved"
+
+    - name: "Lightweight Chatbot"
+      description: "Resource-efficient conversational AI for edge and CPU-based deployments"
+      status: "approved"
+
+  # Deployment configuration
+  deployment:
+    servingFramework: "kserve"
+    runtime: "huggingface"
+    replicas: 1
+    resources:
+      requests:
+        memory: "4Gi"
+        cpu: "4"
+      limits:
+        memory: "8Gi"
+        cpu: "8"
+    autoscaling:
+      enabled: true
+      minReplicas: 1
+      maxReplicas: 3
+      targetCPU: 70
+
+  # Tags for searchability
+  tags:
+    - "llm"
+    - "qwen"
+    - "qwen2"
+    - "qwen2.5"
+    - "qwen-coder"
+    - "codeqwen"
+    - "alibaba"
+    - "huggingface"
+    - "public-model"
+    - "approved"
+    - "production-ready"
+    - "lightweight"
+    - "cpu-compatible"
+    - "instruction-tuned"
+    - "code-generation"
+    - "chat"
+    - "1.5b-parameters"

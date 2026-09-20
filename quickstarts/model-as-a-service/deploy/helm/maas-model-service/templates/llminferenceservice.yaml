@@ -1,4 +1,4 @@
-apiVersion: serving.kserve.io/v1alpha1
+apiVersion: serving.kserve.io/v1alpha2
 kind: LLMInferenceService
 metadata:
   name: {{ include "maas-model-service.modelName" . }}
@@ -19,13 +19,13 @@ metadata:
     {{- end }}
   annotations:
     {{- include "maas-model-service.annotations" . | nindent 4 }}
+    security.opendatahub.io/enable-auth: "false"
     {{- if .Values.modelRegistry.enabled }}
     {{- if .Values.modelRegistry.connectionSecret }}
     opendatahub.io/connections: {{ .Values.modelRegistry.connectionSecret }}
     {{- end }}
     opendatahub.io/model-type: generative
     openshift.io/display-name: {{ .Values.model.displayName }}
-    security.opendatahub.io/enable-auth: "false"
     {{- end }}
 spec:
   {{- if and .Values.advanced (index .Values.advanced "enabled") }}
@@ -42,6 +42,13 @@ spec:
     scheduler: {}
   {{- end }}
   template:
+    {{- if and (not .Values.modelRegistry.enabled) .Values.s3.enabled }}
+    serviceAccountName: {{ include "maas-model-service.modelName" . }}-sa
+    {{- end }}
+    {{- if .Values.imagePullSecrets }}
+    imagePullSecrets:
+    {{- toYaml .Values.imagePullSecrets | nindent 4 }}
+    {{- end }}
     containers:
     - name: main
       {{- if .Values.inference.image }}
@@ -51,7 +58,7 @@ spec:
       imagePullPolicy: {{ .Values.inference.imagePullPolicy }}
       {{- end }}
       resources:
-        {{- toYaml .Values.resources | nindent 8 }}
+        {{- include "maas-model-service.gpuResources" . | nindent 8 }}
       {{- if or .Values.inference.extraArgs .Values.inference.env }}
       env:
         {{- if .Values.inference.extraArgs }}
@@ -76,13 +83,15 @@ spec:
     - name: {{ .Values.modelRegistry.connectionSecret }}
     {{- end }}
     {{- end }}
-    {{- if .Values.scheduling.nodeSelector }}
+    {{- $ns := include "maas-model-service.nodeSelector" . }}
+    {{- if $ns }}
     nodeSelector:
-      {{- toYaml .Values.scheduling.nodeSelector | nindent 6 }}
+      {{- $ns | nindent 6 }}
     {{- end }}
-    {{- if .Values.scheduling.tolerations }}
+    {{- $tols := include "maas-model-service.tolerations" . }}
+    {{- if $tols }}
     tolerations:
-      {{- toYaml .Values.scheduling.tolerations | nindent 6 }}
+      {{- $tols | nindent 6 }}
     {{- end }}
     {{- if .Values.scheduling.affinity }}
     affinity:

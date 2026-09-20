@@ -194,6 +194,19 @@ developerHub:
       #       - text: "Link 1"
       #         url: "/path1"
 
+      # Learning Paths customisation
+      # Hosts the learning-paths data.json on GitHub and serves it via the RHDH proxy.
+      # IMPORTANT: the /developer-hub/learning-paths pathRewrite must be declared
+      # before /developer-hub (homepage) in the proxy config — this is handled automatically.
+      learningPaths:
+        enabled: true
+        # Raw URL base for the hosted data.json.
+        githubRawBaseUrl: "https://raw.githubusercontent.com"
+        # TODO: Replace with IBM/storage-fusion path once the file is merged there.
+        # Final path will be: /IBM/storage-fusion/main/AI/quickstarts/fusion-developerhub/assets/learning-paths/data.json
+        # Temporary: hosted at Namita-Singroha/mcp-gitreview for testing.
+        dataJsonPath: "/Namita-Singroha/mcp-gitreview/main/learning-paths/data.json"
+
       # OpenShift AI Model Connector (KEY FEATURE)
       plugins:
         - name: openshift-ai-connector
@@ -323,10 +336,13 @@ developerHub:
             - allow: [Component]
 
         # NVIDIA AIQ Blueprint
+        # TODO: revert to IBM/storage-fusion once merged there
+        # Final target: https://github.com/IBM/storage-fusion/blob/master/AI/NVIDIA%20Blueprints/NVIDIA%20AIQ/backstage/catalog-info.yaml
         - type: url
-          target: https://github.com/IBM/storage-fusion/blob/master/AI/NVIDIA%20Blueprints/NVIDIA%20AIQ/backstage/catalog-info.yaml
+          target: https://github.com/Namita-Singroha/mcp-gitreview/blob/main/NVIDIA%20Blueprints/NVIDIA%20AIQ/backstage/catalog-info.yaml
           rules:
             - allow: [Component]
+
 
         # NVIDIA VSS Blueprint
         - type: url

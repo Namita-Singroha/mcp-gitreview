@@ -115,3 +115,57 @@ Generate ServingRuntime name
 {{- printf "%s-runtime" .Values.model.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+Derive GPU resources block from accelerator.vendor.
+Injects the correct nvidia.com/gpu or amd.com/gpu resource key into the
+resources block. Users set only cpu/memory under .Values.resources.
+Fails at render time if vendor is set to an unsupported value.
+*/}}
+{{- define "maas-model-service.gpuResources" -}}
+{{- $res := deepCopy .Values.resources -}}
+{{- $limits := $res.limits | default dict -}}
+{{- $requests := $res.requests | default dict -}}
+{{- range $key := list "nvidia.com/gpu" "amd.com/gpu" -}}
+  {{- if or (hasKey $limits $key) (hasKey $requests $key) -}}
+    {{- fail (printf "resources must not contain %s; set accelerator.vendor and accelerator.count instead" $key) -}}
+  {{- end -}}
+{{- end -}}
+{{- if .Values.accelerator.vendor -}}
+  {{- if eq .Values.accelerator.vendor "nvidia" -}}
+    {{- $_ := set $res.limits "nvidia.com/gpu" (.Values.accelerator.count | toString) -}}
+    {{- $_ := set $res.requests "nvidia.com/gpu" (.Values.accelerator.count | toString) -}}
+  {{- else if eq .Values.accelerator.vendor "amd" -}}
+    {{- $_ := set $res.limits "amd.com/gpu" (.Values.accelerator.count | toString) -}}
+    {{- $_ := set $res.requests "amd.com/gpu" (.Values.accelerator.count | toString) -}}
+  {{- else -}}
+    {{- fail (printf "accelerator.vendor must be 'nvidia' or 'amd', got: '%s'" .Values.accelerator.vendor) -}}
+  {{- end -}}
+{{- end -}}
+{{- toYaml $res -}}
+{{- end }}
+
+{{/*
+Merge accelerator.tolerations with scheduling.tolerations.
+accelerator.tolerations come first (GPU-specific), then scheduling.tolerations.
+*/}}
+{{- define "maas-model-service.tolerations" -}}
+{{- $accTols := .Values.accelerator.tolerations | default list -}}
+{{- $schedTols := .Values.scheduling.tolerations | default list -}}
+{{- $all := concat $accTols $schedTols -}}
+{{- if $all -}}
+{{- toYaml $all -}}
+{{- end -}}
+{{- end }}
+
+{{/*
+Merge accelerator.nodeSelector with scheduling.nodeSelector.
+*/}}
+{{- define "maas-model-service.nodeSelector" -}}
+{{- $accNS := .Values.accelerator.nodeSelector | default dict -}}
+{{- $schedNS := .Values.scheduling.nodeSelector | default dict -}}
+{{- $merged := merge $accNS $schedNS -}}
+{{- if $merged -}}
+{{- toYaml $merged -}}
+{{- end -}}
+{{- end }}

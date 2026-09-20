@@ -1,6 +1,16 @@
 #!/bin/bash
 # install-runtime.sh - Deploy MaaS Runtime Platform
-# Usage: ./install-runtime.sh [values-file]
+# Usage: ./install-runtime.sh <values-file> [cluster-override-file]
+#
+# Arguments:
+#   values-file           Base values file (required)
+#   cluster-override-file Optional second values file — merged on top of base.
+#                         Use this for cluster-specific overrides such as
+#                         disabling cert-manager/Keycloak that are pre-installed.
+# Example:
+#   ./install-runtime.sh \
+#     examples/Fusion-Agentic-Assistance-Platform/values.yaml \
+#     examples/my-cluster-values.yaml
 
 set -e
 
@@ -14,11 +24,21 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# Default values file
+# Positional arguments
 VALUES_FILE="${1:-$PROJECT_ROOT/examples/Fusion-Agentic-Assistance-Platform/values.yaml}"
+OVERRIDE_FILE="${2:-}"   # optional cluster-specific override (second argument)
+
 OPERATORS_VALUES_FILE="${OPERATORS_VALUES_FILE:-$VALUES_FILE}"
 PLATFORM_VALUES_FILE="${PLATFORM_VALUES_FILE:-$VALUES_FILE}"
 RUNTIME_VALUES_FILE="${RUNTIME_VALUES_FILE:-$VALUES_FILE}"
+
+# Build the -f flag string used in every helm call.
+# If an override file was supplied it is appended as a second -f so its values
+# win over the base file (standard Helm merge order).
+HELM_VALUES_ARGS="-f $VALUES_FILE"
+if [ -n "$OVERRIDE_FILE" ]; then
+    HELM_VALUES_ARGS="$HELM_VALUES_ARGS -f $OVERRIDE_FILE"
+fi
 
 echo -e "${GREEN}=== MaaS Runtime Installation ===${NC}"
 echo ""
@@ -55,6 +75,33 @@ if ! oc auth can-i '*' '*' --all-namespaces &> /dev/null; then
     fi
 fi
 
+# ── GPU Readiness Check ───────────────────────────────────────────────────────
+# Queries node.status.allocatable — NOT node labels.
+# amd.com/gpu is simultaneously a node label AND a resource name; only
+# .status.allocatable confirms a GPU is actually schedulable.
+echo "Checking GPU resources on cluster nodes..."
+NVIDIA_GPU_NODES=$(oc get nodes \
+    -o jsonpath='{range .items[*]}{.status.allocatable.nvidia\.com/gpu}{"\n"}{end}' \
+    2>/dev/null | grep -v '^$' | grep -v '^0$' | wc -l | tr -d ' ')
+AMD_GPU_NODES=$(oc get nodes \
+    -o jsonpath='{range .items[*]}{.status.allocatable.amd\.com/gpu}{"\n"}{end}' \
+    2>/dev/null | grep -v '^$' | grep -v '^0$' | wc -l | tr -d ' ')
+
+if [[ "$NVIDIA_GPU_NODES" -gt 0 && "$AMD_GPU_NODES" -gt 0 ]]; then
+    echo -e "${GREEN}✓ Mixed GPU cluster detected${NC}"
+    echo "  NVIDIA: $NVIDIA_GPU_NODES node(s) with nvidia.com/gpu allocatable"
+    echo "  AMD:    $AMD_GPU_NODES node(s) with amd.com/gpu allocatable"
+    echo "  Use vendor-specific overlays when deploying models (accelerator.vendor: nvidia|amd)"
+elif [[ "$NVIDIA_GPU_NODES" -gt 0 ]]; then
+    echo -e "${GREEN}✓ NVIDIA GPU cluster: $NVIDIA_GPU_NODES node(s) with nvidia.com/gpu allocatable${NC}"
+elif [[ "$AMD_GPU_NODES" -gt 0 ]]; then
+    echo -e "${GREEN}✓ AMD GPU cluster: $AMD_GPU_NODES node(s) with amd.com/gpu allocatable${NC}"
+else
+    echo -e "${YELLOW}⚠ No GPU resources (nvidia.com/gpu or amd.com/gpu) allocatable on any node.${NC}"
+    echo "  MaaS operators will install. GPU-backed model serving requires GPU operators from isf-compute-operator."
+fi
+echo ""
+
 # Check if values files exist
 for file in "$VALUES_FILE" "$OPERATORS_VALUES_FILE" "$PLATFORM_VALUES_FILE" "$RUNTIME_VALUES_FILE"; do
     if [ ! -f "$file" ]; then
@@ -62,6 +109,13 @@ for file in "$VALUES_FILE" "$OPERATORS_VALUES_FILE" "$PLATFORM_VALUES_FILE" "$RU
         exit 1
     fi
 done
+if [ -n "$OVERRIDE_FILE" ] && [ ! -f "$OVERRIDE_FILE" ]; then
+    echo -e "${RED}Error: Override file not found: $OVERRIDE_FILE${NC}"
+    exit 1
+fi
+if [ -n "$OVERRIDE_FILE" ]; then
+    echo "  Override file: $OVERRIDE_FILE"
+fi
 
 echo -e "${GREEN}✓ Prerequisites check passed${NC}"
 echo ""
@@ -76,8 +130,22 @@ fi
 echo -e "${GREEN}✓ Default StorageClass found${NC}"
 echo ""
 
-# Prompt for passwords if using Keycloak
-if grep -A 5 "keycloak:" "$RUNTIME_VALUES_FILE" | grep -q "enabled: true"; then
+# Prompt for passwords if using Keycloak.
+# Check base file first, then let override file win (last file sets final value).
+_keycloak_enabled() {
+    local enabled="false"
+    # Walk each values file in order; last explicit setting wins.
+    for f in "$VALUES_FILE" ${OVERRIDE_FILE:+"$OVERRIDE_FILE"}; do
+        if grep -A 3 "keycloak:" "$f" 2>/dev/null | grep -q "enabled: true"; then
+            enabled="true"
+        elif grep -A 3 "keycloak:" "$f" 2>/dev/null | grep -q "enabled: false"; then
+            enabled="false"
+        fi
+    done
+    echo "$enabled"
+}
+
+if [ "$(_keycloak_enabled)" = "true" ]; then
     echo "Keycloak is enabled. Please provide passwords:"
     echo ""
     
@@ -103,7 +171,7 @@ echo "Chart: $CHARTS_DIR/maas-operators"
 echo ""
 
 helm upgrade --install maas-operators "$CHARTS_DIR/maas-operators" \
-    -f "$OPERATORS_VALUES_FILE" \
+    $HELM_VALUES_ARGS \
     --timeout 20m \
     --wait
 
@@ -113,12 +181,13 @@ echo ""
 
 # Wait for OpenShift AI operator to be ready
 echo "Waiting for OpenShift AI operator to be ready..."
-if oc wait --for=condition=Available deployment/rhods-operator -n redhat-ods-operator --timeout=10m 2>/dev/null; then
-    echo -e "${GREEN}✓ OpenShift AI operator ready${NC}"
-else
-    echo -e "${YELLOW}⚠ OpenShift AI operator deployment not found, checking CSV...${NC}"
-    sleep 30
-fi
+for i in {1..60}; do
+    if oc get csv -n redhat-ods-operator 2>/dev/null | grep -q "Succeeded" || oc get deployment -n redhat-ods-operator 2>/dev/null | grep -q "rhods\|opendatahub"; then
+        echo -e "${GREEN}✓ OpenShift AI operator ready${NC}"
+        break
+    fi
+    sleep 5
+done
 
 # Wait for DataScienceCluster CRD to be available
 echo "Waiting for DataScienceCluster CRD to be available..."
@@ -134,33 +203,19 @@ for i in {1..60}; do
     sleep 5
 done
 
-# Wait for Kuadrant CRD to be available
-echo "Waiting for Kuadrant CRD to be available..."
-for i in {1..60}; do
-    if oc get crd kuadrants.kuadrant.io &>/dev/null; then
-        echo -e "${GREEN}✓ Kuadrant CRD available${NC}"
-        break
-    fi
-    if [ $i -eq 60 ]; then
-        echo -e "${YELLOW}⚠ Kuadrant CRD not available after 5 minutes${NC}"
-        break
-    fi
-    sleep 5
-done
+# Check Kuadrant CRD (skip if disabled or missing)
+if oc get crd kuadrants.kuadrant.io &>/dev/null; then
+    echo -e "${GREEN}✓ Kuadrant CRD available${NC}"
+else
+    echo -e "${YELLOW}ℹ Kuadrant CRD not found (optional/disabled — skipping)${NC}"
+fi
 
-# Wait for LeaderWorkerSet CRD to be available
-echo "Waiting for LeaderWorkerSetOperator CRD to be available..."
-for i in {1..60}; do
-    if oc get crd leaderworkersetoperators.operator.openshift.io &>/dev/null; then
-        echo -e "${GREEN}✓ LeaderWorkerSetOperator CRD available${NC}"
-        break
-    fi
-    if [ $i -eq 60 ]; then
-        echo -e "${YELLOW}⚠ LeaderWorkerSetOperator CRD not available after 5 minutes${NC}"
-        break
-    fi
-    sleep 5
-done
+# Check LeaderWorkerSet CRD (skip if disabled or missing)
+if oc get crd leaderworkersetoperators.operator.openshift.io &>/dev/null || oc get crd leaderworkersets.leaderworkerset.x-k8s.io &>/dev/null; then
+    echo -e "${GREEN}✓ LeaderWorkerSet CRD available${NC}"
+else
+    echo -e "${YELLOW}ℹ LeaderWorkerSet CRD not found (optional/disabled — skipping)${NC}"
+fi
 
 echo ""
 echo -e "${GREEN}=== Phase 2: Creating DataScienceCluster and Operator Instances ===${NC}"
@@ -169,7 +224,7 @@ echo "Chart: $CHARTS_DIR/maas-platform"
 echo ""
 
 helm upgrade --install maas-platform "$CHARTS_DIR/maas-platform" \
-    -f "$PLATFORM_VALUES_FILE" \
+    $HELM_VALUES_ARGS \
     --timeout 20m \
     --wait
 
@@ -192,7 +247,7 @@ echo ""
 # Install or upgrade the main runtime resources
 echo "Installing MaaS runtime resources (gateway, model registry, workbench storage, etc.)..."
 helm upgrade --install maas-runtime "$CHARTS_DIR/maas-runtime" \
-    -f "$RUNTIME_VALUES_FILE" \
+    $HELM_VALUES_ARGS \
     $KEYCLOAK_ARGS \
     --timeout 10m \
     --force

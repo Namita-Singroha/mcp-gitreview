@@ -12,7 +12,7 @@ spec:
   description: Model Registry GitOps - Development Environment
   
   sourceRepos:
-    - 'https://github.com/IBM/storage-fusion.git'
+    - 'https://github.ibm.com/ProjectAbell/Fusion-AI.git'
     - '*'  # Allow flexibility for development
   
   destinations:

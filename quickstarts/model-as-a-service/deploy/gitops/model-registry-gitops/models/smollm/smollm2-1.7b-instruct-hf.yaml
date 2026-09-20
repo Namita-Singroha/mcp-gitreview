@@ -1,0 +1,142 @@
+apiVersion: v1
+kind: ModelVersion
+metadata:
+  name: smollm2-1-7b-instruct-hf
+  labels:
+    model-type: public
+    source: huggingface
+    task: text-generation
+    governance-status: approved
+spec:
+  modelName: "SmolLM2-1.7B-Instruct"
+  version: "1.0.0"
+  description: |
+    SmolLM2-1.7B-Instruct is a lightweight instruction-tuned language model from HuggingFace's
+    SmolLM2 family, built on the Llama architecture (LlamaForCausalLM) with 1.7 billion parameters.
+    It is fine-tuned from HuggingFaceTB/SmolLM2-1.7B for conversational and instruction-following
+    tasks, and supports deployment via text-generation-inference, transformers.js, and ONNX runtime.
+
+    The model is well-suited for resource-constrained deployments, edge inference, and browser-based
+    use cases. Detailed in arxiv:2502.02737 (SmolLM2).
+
+    This version is sourced directly from Hugging Face (hf://HuggingFaceTB/SmolLM2-1.7B-Instruct)
+    and registered in the model-registry via the model catalog.
+
+  author: "HuggingFace (HuggingFaceTB)"
+
+  # Base model information
+  baseModel:
+    name: "HuggingFaceTB/SmolLM2-1.7B-Instruct"
+    source: "huggingface"
+    sourceUrl: "https://huggingface.co/HuggingFaceTB/SmolLM2-1.7B-Instruct"
+    version: "main"
+    license: "Apache-2.0"
+    licenseUrl: "https://www.apache.org/licenses/LICENSE-2.0"
+
+  # Governance and compliance metadata
+  governance:
+    approvedBy: "platform-team@company.com"
+    approvalDate: "2025-07-03"
+    approvalTicket: "MAAS-003"
+    licenseVerified: true
+    securityScanned: true
+    scanDate: "2025-07-03"
+    scanTool: "trivy"
+    complianceStatus: "approved"
+    restrictions:
+      - "Approved for production enterprise workloads"
+      - "Monitor for bias in responses"
+      - "Optimised for CPU, edge, and low-resource GPU deployments"
+
+  # Model storage and artifacts
+  storage:
+    uri: "hf://HuggingFaceTB/SmolLM2-1.7B-Instruct"
+    type: "huggingface"
+    size: "3.4GB"
+    format: "safetensors"
+
+  # Model metadata and capabilities
+  metadata:
+    framework: "transformers"
+    frameworkVersion: "4.40.0"
+    modelType: "causal-lm"
+    architecture: "Llama"
+    parameters: "1.7B"
+    contextLength: "8192"
+    languages:
+      - "en"
+    tasks:
+      - "text-generation"
+      - "conversational"
+      - "instruction-following"
+
+    # Performance metrics
+    metrics:
+      perplexity: "TBD"
+
+    # Training information
+    training:
+      dataset: "HuggingFace curated instruction-tuning datasets"
+      trainingFramework: "PyTorch"
+
+    # Hardware requirements
+    requirements:
+      minMemory: "4GB"
+      recommendedMemory: "8GB"
+      gpu: "optional"
+      minCpu: "4 cores"
+
+  # Use case and deployment information
+  useCases:
+    - name: "Lightweight Chatbot"
+      description: "Resource-efficient conversational AI for edge and CPU-based deployments"
+      status: "approved"
+
+    - name: "Instruction Following"
+      description: "General-purpose instruction-following assistant for enterprise tooling"
+      status: "approved"
+
+    - name: "Browser / Edge Inference"
+      description: "On-device and browser-side inference via transformers.js and ONNX runtime"
+      status: "approved"
+
+    - name: "Text Generation"
+      description: "Compact text generation for content summarisation and Q&A"
+      status: "approved"
+
+  # Deployment configuration
+  deployment:
+    servingFramework: "kserve"
+    runtime: "huggingface"
+    replicas: 1
+    resources:
+      requests:
+        memory: "4Gi"
+        cpu: "4"
+      limits:
+        memory: "8Gi"
+        cpu: "8"
+    autoscaling:
+      enabled: true
+      minReplicas: 1
+      maxReplicas: 3
+      targetCPU: 70
+
+  # Tags for searchability
+  tags:
+    - "llm"
+    - "smollm"
+    - "smollm2"
+    - "huggingfacetb"
+    - "huggingface"
+    - "llama"
+    - "public-model"
+    - "approved"
+    - "production-ready"
+    - "lightweight"
+    - "cpu-compatible"
+    - "edge-inference"
+    - "onnx"
+    - "transformers-js"
+    - "instruction-tuned"
+    - "1.7b-parameters"

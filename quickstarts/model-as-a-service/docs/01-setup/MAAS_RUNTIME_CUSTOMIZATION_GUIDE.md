@@ -80,7 +80,7 @@ This guide serves:
 
 This guide assumes the OpenShift AI platform components are configured. If not completed:
 
-**Option 1**: Follow the [Platform Customization Guide](MAAS_PLATFORM_CUSTOMIZATION_GUIDE.md) (30 minutes)
+**Option 1**: Follow the [Platform Customization Guide](https://github.ibm.com/ProjectAbell/Fusion-AI/blob/main/quickstarts/model-as-a-service/docs/01-setup/MAAS_PLATFORM_CUSTOMIZATION_GUIDE.md) (30 minutes)
 
 **Option 2**: Quick platform deployment if already familiar:
 ```bash
@@ -104,7 +104,7 @@ oc get datasciencecluster -n redhat-ods-operator
 - ✅ Helm 3.x installed
 - ✅ Understanding of Kubernetes networking and storage concepts
 
-**Platform not configured?** Complete the [Platform Customization Guide](MAAS_PLATFORM_CUSTOMIZATION_GUIDE.md) first, then return here.
+**Platform not configured?** Complete the [Platform Customization Guide](https://github.ibm.com/ProjectAbell/Fusion-AI/blob/main/quickstarts/model-as-a-service/docs/01-setup/MAAS_PLATFORM_CUSTOMIZATION_GUIDE.md) first, then return here.
 
 ---
 
@@ -1121,17 +1121,17 @@ oc delete namespace maas-models
 
 After installing the MaaS Runtime:
 
-1. **Deploy models**: See [DEPLOYING_MODEL_SERVICES.md](../03-model-deployment/DEPLOYING_MODEL_SERVICES.md)
-2. **Configure Model Registry**: See [ADDING_MODELS_TO_REGISTRY.md](../02-model-catalog-and-registry/ADDING_MODELS_TO_REGISTRY.md)
-3. **Set up workbenches**: See [WORKBENCH_STORAGE_GUIDE.md](../04-workbench-configuration/WORKBENCH_STORAGE_GUIDE.md)
-4. **Add models to registry**: See [ADDING_MODELS_TO_REGISTRY.md](../02-model-catalog-and-registry/ADDING_MODELS_TO_REGISTRY.md)
+1. **Deploy models**: See [DEPLOYING_MODEL_SERVICES.md](https://github.ibm.com/ProjectAbell/Fusion-AI/blob/main/quickstarts/model-as-a-service/docs/03-model-deployment/DEPLOYING_MODEL_SERVICES.md)
+2. **Configure Model Registry**: See [ADDING_MODELS_TO_REGISTRY.md](https://github.ibm.com/ProjectAbell/Fusion-AI/blob/main/quickstarts/model-as-a-service/docs/02-model-catalog-and-registry/ADDING_MODELS_TO_REGISTRY.md)
+3. **Set up workbenches**: See [WORKBENCH_STORAGE_GUIDE.md](https://github.ibm.com/ProjectAbell/Fusion-AI/blob/main/quickstarts/model-as-a-service/docs/04-workbench-configuration/WORKBENCH_STORAGE_GUIDE.md)
+4. **Add models to registry**: See [ADDING_MODELS_TO_REGISTRY.md](https://github.ibm.com/ProjectAbell/Fusion-AI/blob/main/quickstarts/model-as-a-service/docs/02-model-catalog-and-registry/ADDING_MODELS_TO_REGISTRY.md)
 
 ## References
 
-- [MaaS Platform Documentation](../../README.md)
-- [Getting Started Guide](../GETTING_STARTED.md)
-- [Operators Guide](MAAS_OPERATORS_GUIDE.md)
-- [Platform Customization Guide](MAAS_PLATFORM_CUSTOMIZATION_GUIDE.md)
+- [MaaS Platform Documentation](https://github.ibm.com/ProjectAbell/Fusion-AI/blob/main/quickstarts/model-as-a-service/README.md)
+- [Getting Started Guide](https://github.ibm.com/ProjectAbell/Fusion-AI/blob/main/quickstarts/model-as-a-service/docs/GETTING_STARTED.md)
+- [Operators Guide](https://github.ibm.com/ProjectAbell/Fusion-AI/blob/main/quickstarts/model-as-a-service/docs/01-setup/MAAS_OPERATORS_GUIDE.md)
+- [Platform Customization Guide](https://github.ibm.com/ProjectAbell/Fusion-AI/blob/main/quickstarts/model-as-a-service/docs/01-setup/MAAS_PLATFORM_CUSTOMIZATION_GUIDE.md)
 - [Red Hat OpenShift AI Documentation](https://access.redhat.com/documentation/en-us/red_hat_openshift_ai)
 - [Gateway API Documentation](https://gateway-api.sigs.k8s.io/)
 - [OpenShift Data Foundation Documentation](https://access.redhat.com/documentation/en-us/red_hat_openshift_data_foundation)

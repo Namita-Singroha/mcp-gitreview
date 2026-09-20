@@ -100,6 +100,39 @@ source:
   #   key: "models/my-model"
 
 # -----------------------------------------------------------------------------
+# Optional S3 Data Connection
+# -----------------------------------------------------------------------------
+# Enable only when deploying directly from an s3:// source URI without a Model
+# Registry connection. Credentials must be supplied outside source control.
+s3:
+  enabled: false
+  secretName: "aws-connection-models"
+  endpoint: ""
+  region: ""
+  bucket: ""
+  accessKeyId: ""
+  secretAccessKey: ""
+
+# -----------------------------------------------------------------------------
+# Accelerator Configuration
+# -----------------------------------------------------------------------------
+# Declare exactly ONE GPU vendor per model deployment.
+# The chart derives the correct resource key (nvidia.com/gpu or amd.com/gpu)
+# from accelerator.vendor — do NOT place GPU keys under resources directly.
+#
+# vendor:         "nvidia" or "amd" — required, no default
+# count:          number of GPUs per pod
+# nodeSelector:   optional extra node selectors (GPU Operator labels work by default)
+# tolerations:    GPU node tolerations (add if your GPU nodes have a NoSchedule taint)
+# runtimeProfile: "vllm-cuda" for NVIDIA, "vllm-rocm" for AMD (informational)
+accelerator:
+  vendor: ""
+  count: 1
+  nodeSelector: {}
+  tolerations: []
+  runtimeProfile: ""
+
+# -----------------------------------------------------------------------------
 # Inference Engine Configuration
 # -----------------------------------------------------------------------------
 # configuration for LLM-D mode
@@ -107,16 +140,19 @@ inference:
   # Inference engine to use
   # Supported: vllm, tgi (text-generation-inference), llama-cpp
   engine: vllm
-  
-  # Container image for the inference engine
-  image: registry.redhat.io/rhaiis/vllm-cuda-rhel9:3.3.0
-  
+
+  # Container image for the inference engine.
+  # Required — must be supplied by the overlay. No default.
+  # NVIDIA: registry.redhat.io/rhaiis/vllm-cuda-rhel9:3.3.0
+  # AMD:    registry.redhat.io/rhaiis/vllm-rocm-rhel9:3.3.0  (confirm with Compute team)
+  image: ""
+
   # Image pull policy
   imagePullPolicy: IfNotPresent
-  
+
   # Number of replicas (for horizontal scaling)
   replicas: 1
-  
+
   # Engine-specific arguments
   # For vLLM, these are passed as command-line arguments
   extraArgs: []
@@ -124,7 +160,7 @@ inference:
     # - --enable-auto-tool-choice
     # - --tool-call-parser=qwen3_coder
     # - --trust-remote-code
-  
+
   # Environment variables
   env: []
     # - name: VLLM_ADDITIONAL_ARGS
@@ -134,30 +170,28 @@ inference:
 # -----------------------------------------------------------------------------
 # Resource Allocation
 # -----------------------------------------------------------------------------
+# GPU resource key is injected automatically from accelerator.vendor.
+# Only set cpu and memory here.
 resources:
   limits:
     cpu: "4"
     memory: 24Gi
-    nvidia.com/gpu: "1"
   requests:
     cpu: "2"
     memory: 16Gi
-    nvidia.com/gpu: "1"
 
 # -----------------------------------------------------------------------------
 # Pod Scheduling Configuration
 # -----------------------------------------------------------------------------
+# Use accelerator.nodeSelector and accelerator.tolerations for GPU placement.
+# This scheduling block is for any additional non-GPU scheduling constraints.
 scheduling:
-  # Node selector for pod placement
+  # Additional node selectors (merged with accelerator.nodeSelector)
   nodeSelector: {}
-    # node-role.kubernetes.io/gpu: ""
-  
-  # Tolerations for GPU nodes
-  tolerations:
-    - effect: NoSchedule
-      key: nvidia.com/gpu
-      operator: Exists
-  
+
+  # Additional tolerations (merged with accelerator.tolerations)
+  tolerations: []
+
   # Affinity rules
   affinity: {}
     # podAntiAffinity:

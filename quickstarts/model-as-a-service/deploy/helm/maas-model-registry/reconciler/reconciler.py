@@ -32,6 +32,11 @@ if os.getenv("REGISTRY_VERIFY_SSL", "false").lower() != "true":
     # Set SSL context to not verify
     ssl._create_default_https_context = ssl._create_unverified_context
 
+# Route all Python warnings (urllib3 InsecureRequestWarning, model_registry
+# UserWarning, etc.) through the logging system so they appear in the pod
+# log at WARNING level alongside DEBUG / INFO / ERROR entries.
+logging.captureWarnings(True)
+
 import boto3
 from botocore.client import Config
 from kubernetes import client, config, watch
@@ -107,14 +112,18 @@ class ModelRegistryReconciler:
         if registry_secure and not verify_ssl:
             logger.warning("SSL verification disabled for self-signed certificates")
         
-        self.registry = ModelRegistry(
-            server_address=server_url,
-            port=registry_port,
-            author="GitOps Reconciler",
-            is_secure=registry_secure,
-            user_token=user_token
-        )
-        logger.info(f"Connected to Model Registry at {server_url}:{registry_port} (SSL verify: {verify_ssl})")
+        try:
+            self.registry = ModelRegistry(
+                server_address=server_url,
+                port=registry_port,
+                author="GitOps Reconciler",
+                is_secure=registry_secure,
+                user_token=user_token
+            )
+            logger.info(f"Connected to Model Registry at {server_url}:{registry_port} (SSL verify: {verify_ssl})")
+        except Exception as e:
+            logger.error(f"Failed to connect to Model Registry at {server_url}:{registry_port}: {e}")
+            raise
 
         # S3 configuration
         self.s3_config = self._load_s3_config()
@@ -287,7 +296,8 @@ class ModelRegistryReconciler:
 
             logger.info(f"Uploaded {file_count} files")
 
-            # Construct S3 URI
+            # Construct S3 URI using the full HTTPS endpoint — this is the format
+            # the Model Registry stores and the RHOAI UI resolves for artifact display.
             endpoint = self.s3_config["endpoint"]
             s3_uri = f"{endpoint}/{bucket}/{s3_prefix}"
             return s3_uri
@@ -296,23 +306,87 @@ class ModelRegistryReconciler:
             return None
 
     def register_model(self, model_def: ModelDefinition, s3_uri: str) -> bool:
-        """Register model with Model Registry"""
-        try:
-            logger.info(f"Registering model {model_def.model_name} version {model_def.version}...")
+        """Register model with Model Registry.
 
-            # Check if model already exists
+        Decision logic (checks modelName + version from the GitOps YAML):
+          1. RegisteredModel ARCHIVED  → skip entirely (respect UI deletion)
+          2. RegisteredModel LIVE  +  ModelVersion matching model_def.version  +  artifact with URI
+                                   → already on UI, skip
+          3. RegisteredModel LIVE  +  version/artifact missing
+                                   → register the missing version
+          4. RegisteredModel absent → register from scratch
+        """
+        try:
+            logger.info(
+                f"Checking registry for '{model_def.model_name}' "
+                f"version '{model_def.version}'..."
+            )
+
+            # ── Step 1: look up the registered model by name ─────────────────────
+            existing_model = None
             try:
                 existing_model = self.registry.get_registered_model(model_def.model_name)
-                try:
-                    existing_version = self.registry.get_model_version(model_def.model_name, model_def.version)
-                    logger.info(f"Model {model_def.model_name} version {model_def.version} already exists")
-                    return True
-                except:
-                    logger.info(f"Registering new version {model_def.version}")
-            except:
-                logger.info(f"Registering new model {model_def.model_name}")
+            except Exception:
+                pass  # Model not in registry at all
 
-            # Register the model
+            if existing_model is not None:
+                state = str(existing_model.state).upper()
+
+                # ── Rule 1: ARCHIVED → do not touch, skip ─────────────────────
+                if "ARCHIVED" in state:
+                    logger.info(
+                        f"'{model_def.model_name}' is ARCHIVED in the registry "
+                        f"(deleted from UI) — skipping, will not re-register"
+                    )
+                    return True  # deliberate skip, not an error
+
+                logger.info(
+                    f"'{model_def.model_name}' is LIVE (id={existing_model.id}) — "
+                    f"checking for version '{model_def.version}' with artifact..."
+                )
+
+                # ── Rule 2: check exact version + artifact from the GitOps YAML ─
+                version_on_ui = False
+                try:
+                    existing_version = self.registry.get_model_version(
+                        model_def.model_name, model_def.version
+                    )
+                    if existing_version is not None:
+                        try:
+                            artifact = self.registry.get_model_artifact(
+                                model_def.model_name, model_def.version
+                            )
+                            if artifact is not None and artifact.uri:
+                                version_on_ui = True
+                                logger.info(
+                                    f"'{model_def.model_name}' version '{model_def.version}' "
+                                    f"is already on UI with artifact uri={artifact.uri} — skipping"
+                                )
+                                return True
+                            else:
+                                logger.warning(
+                                    f"Version '{model_def.version}' exists but artifact URI is "
+                                    f"empty — will register artifact"
+                                )
+                        except Exception:
+                            logger.warning(
+                                f"Version '{model_def.version}' exists but artifact lookup "
+                                f"failed — will register artifact"
+                            )
+                except Exception:
+                    pass  # version not found — fall through to register
+
+                if not version_on_ui:
+                    logger.info(
+                        f"Version '{model_def.version}' of '{model_def.model_name}' "
+                        f"is NOT on UI — registering now"
+                    )
+            else:
+                logger.info(
+                    f"'{model_def.model_name}' not found in registry — registering new"
+                )
+
+            # ── Step 2: register the model version + artifact ────────────────────
             model = self.registry.register_model(
                 model_def.model_name,
                 s3_uri,
@@ -324,14 +398,20 @@ class ModelRegistryReconciler:
                     "source": model_def.base_model.get("source", "unknown"),
                     "hf_id": model_def.base_model.get("name", ""),
                     "storage": "odf",
-                    "governance_status": model_def.governance.get("complianceStatus") if model_def.governance else "unknown"
+                    "governance_status": (
+                        model_def.governance.get("complianceStatus")
+                        if model_def.governance else "unknown"
+                    )
                 }
             )
 
-            logger.info(f"Successfully registered model {model.name} (ID: {model.id})")
+            logger.info(
+                f"Successfully registered '{model.name}' version '{model_def.version}' "
+                f"(ID: {model.id})"
+            )
             return True
         except Exception as e:
-            logger.error(f"Failed to register model: {e}")
+            logger.error(f"Failed to register model '{model_def.model_name}': {e}")
             import traceback
             traceback.print_exc()
             return False
@@ -447,43 +527,76 @@ class ModelRegistryReconciler:
         logger.info(f"  Storage Type: {model_def.storage.get('type', 'unknown')}")
         logger.info("=" * 80)
 
-        # Check if already processed
+        # Check if already processed in this pod's lifetime — skip the heavy
+        # download/upload work, but still fall through to register + catalog so
+        # any previous partial failure (e.g. catalog update missed) is healed.
         model_key = f"{model_def.name}:{model_def.version}"
-        if model_key in self.processed_models:
-            logger.info(f"Model {model_key} already processed, skipping")
-            return True
+        already_processed = model_key in self.processed_models
+        if already_processed:
+            logger.info(f"Model {model_key} already processed this session, skipping download/upload")
 
-        # Download from source
-        if model_def.storage.get("type") == "huggingface":
-            local_dir = self.download_from_huggingface(model_def)
-            if not local_dir:
-                return False
-
-            # Upload to S3
-            s3_uri = self.upload_to_s3(local_dir, model_def)
-            if not s3_uri:
-                return False
-
-            # Cleanup local files
-            if self.cleanup_after_upload:
+        if not already_processed:
+            # Download and upload only when not yet handled this session
+            if model_def.storage.get("type") == "huggingface":
+                # Check S3 first to avoid re-downloading multi-GB weights across restarts
+                expected_prefix = f"{model_def.name}/{model_def.version}"
+                expected_s3_uri = (
+                    f"{self.s3_config['endpoint']}/{self.s3_config['bucket']}/{expected_prefix}"
+                )
+                already_in_s3 = False
                 try:
-                    logger.info(f"Cleaning up local directory: {local_dir}")
-                    shutil.rmtree(local_dir)
+                    paginator = self.s3_client.get_paginator("list_objects_v2")
+                    pages = paginator.paginate(
+                        Bucket=self.s3_config["bucket"], Prefix=expected_prefix, MaxKeys=1
+                    )
+                    for page in pages:
+                        if page.get("KeyCount", 0) > 0:
+                            already_in_s3 = True
+                        break
                 except Exception as e:
-                    logger.warning(f"Failed to cleanup {local_dir}: {e}")
-        else:
-            # Use existing S3 URI
-            s3_uri = model_def.storage.get("uri", "")
+                    logger.warning(f"Could not check S3 for existing model, will re-upload: {e}")
 
-        # Register with Model Registry
+                if already_in_s3:
+                    logger.info(f"Model {model_def.name} already in S3, skipping download/upload")
+                    s3_uri = expected_s3_uri
+                else:
+                    local_dir = self.download_from_huggingface(model_def)
+                    if not local_dir:
+                        return False
+
+                    s3_uri = self.upload_to_s3(local_dir, model_def)
+                    if not s3_uri:
+                        return False
+
+                    if self.cleanup_after_upload:
+                        try:
+                            logger.info(f"Cleaning up local directory: {local_dir}")
+                            shutil.rmtree(local_dir)
+                        except Exception as e:
+                            logger.warning(f"Failed to cleanup {local_dir}: {e}")
+            else:
+                # Use existing S3 URI from the model definition
+                s3_uri = model_def.storage.get("uri", "")
+        else:
+            # Already processed — reconstruct the S3 URI without touching storage
+            if model_def.storage.get("type") == "huggingface":
+                expected_prefix = f"{model_def.name}/{model_def.version}"
+                s3_uri = (
+                    f"{self.s3_config['endpoint']}/{self.s3_config['bucket']}/{expected_prefix}"
+                )
+            else:
+                s3_uri = model_def.storage.get("uri", "")
+
+        # Always register (idempotent — Model Registry skips if version already exists)
         if not self.register_model(model_def, s3_uri):
             return False
 
-        # Update catalog
+        # Always update catalog — heals the UI even when a previous catalog write
+        # failed after a successful registration (the original gap)
         if not self.update_catalog(model_def, s3_uri):
             logger.warning("Failed to update catalog, but model is registered")
 
-        # Mark as processed
+        # Mark as processed so subsequent watch events skip download/upload
         self.processed_models.add(model_key)
         logger.info(f"Successfully reconciled model: {model_def.name}")
         return True

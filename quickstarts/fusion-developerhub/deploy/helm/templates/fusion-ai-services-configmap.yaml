@@ -64,12 +64,18 @@ data:
           token: ${GITHUB_TOKEN}
           {{- end }}
         # ── Public GitHub (github.com) ─────────────────────────────────────
+        # No token — blueprint repos (IBM/storage-fusion) are public.
+        # Sending a github.ibm.com token to api.github.com causes 401 even
+        # for public repos. Only inject a token if a separate github.com
+        # token is explicitly configured.
         - host: github.com
-          {{- if .Values.developerHub.fusionServices.githubToken }}
-          token: ${GITHUB_TOKEN}
-          {{- end }}
 
     catalog:
+      # Retain entities written by catalog:write (scaffolder self-service templates).
+      # Without this, the orphan cleanup job (runs every 30s) silently deletes them
+      # because they have no persistent file/url location backing them.
+      orphanStrategy: keep
+
       locations:
         # ── Platform entities: Domain, System, Groups ──────────────────────
         # type:file — ConfigMap key mounted at /opt/app-root/src/ by the operator.
@@ -99,6 +105,27 @@ data:
           target: /opt/app-root/src/add-dcs-cluster-template.yaml
           rules:
             - allow: [Template]
+        - type: file
+          target: /opt/app-root/src/add-wxo-instance-template.yaml
+          rules:
+            - allow: [Template]
+
+        # ── Blueprint locations ────────────────────────────────────────────
+        # Re-declared here because app-config-fusion-services is loaded after
+        # app-config-fusion-blueprints. Backstage uses array-replace semantics
+        # for catalog.locations — the last config file wins and replaces the
+        # entire array. Without these entries the blueprint URLs from
+        # app-config-fusion-blueprints would be silently dropped.
+        {{- range .Values.developerHub.catalog.blueprints.locations }}
+        - type: {{ .type }}
+          target: {{ .target }}
+          {{- if .rules }}
+          rules:
+            {{- range .rules }}
+            - allow: {{ .allow | toJson }}
+            {{- end }}
+          {{- end }}
+        {{- end }}
       rules:
         - allow:
             - Component
@@ -799,6 +826,155 @@ data:
           - title: "MCP — SSE Endpoint"
             url: ${{`{{ 'https://dcs-mcp-route-ibm-data-cataloging.apps.' ~ (parameters.ocpApiUrl | replace('https://api.', '') | replace(':6443', '')) ~ '/mcp' }}`}}
             icon: cloud
+
+  # ── Register IBM watsonx Orchestrate Instance ──────────────────────────────
+  add-wxo-instance-template.yaml: |
+    apiVersion: scaffolder.backstage.io/v1beta3
+    kind: Template
+    metadata:
+      name: add-wxo-instance
+      title: "Register IBM watsonx Orchestrate Instance"
+      description: |
+        Register an IBM watsonx Orchestrate instance in Developer Hub.
+        Enter a cluster name, the WXO URL, and the installed version.
+      tags: [fusion, wxo, watsonx, orchestrate, ai, agents, ibm-fusion, self-service]
+      links:
+        - url: https://www.ibm.com/docs/en/watsonx/watson-orchestrate/current
+          title: "IBM Docs — watsonx Orchestrate"
+          icon: article
+        - url: https://developer.watson-orchestrate.ibm.com/
+          title: "watsonx Orchestrate Developer Hub"
+          icon: article
+        - url: https://www.ibm.com/docs/en/fusion-hci-systems/2.13.x?topic=services-software-hub
+          title: "IBM Docs — Deploy WXO on Fusion HCI"
+          icon: article
+        - url: https://community.ibm.com/community/user/blogs/harichandana-kotha/2026/05/27/quickstart-model-as-a-service-on-ibm-fusion
+          title: "Blog — Getting Started with WXO & Agents"
+          icon: chat
+    spec:
+      owner: group:default/fusion-platform-team
+      type: infrastructure
+      parameters:
+        - title: "watsonx Orchestrate Instance Details"
+          description: >
+            Enter the cluster name, WXO URL, and installed version.
+          required: [clusterName, wxoUrl]
+          properties:
+            clusterName:
+              title: "Cluster Name"
+              type: string
+              description: >
+                Short identifier for the cluster — lowercase letters, numbers, hyphens.
+                Used as the catalog entity name.
+                Examples: prod-east, rack-f73, lab-gpu
+              pattern: "^[a-z][a-z0-9-]*$"
+              ui:autofocus: true
+              ui:placeholder: "rack-f73"
+            wxoUrl:
+              title: "watsonx Orchestrate URL"
+              type: string
+              description: |
+                The base URL of your watsonx Orchestrate instance.
+
+                Example:
+                  https://watsonx-orchestrate.apps.mycluster.example.com
+
+                The following links are derived automatically:
+                  • WXO UI      → <wxoUrl>
+                  • API         → <wxoUrl>/api/v1
+                  • Agent Builder → <wxoUrl>/agents
+              pattern: "^https://"
+              ui:placeholder: "https://watsonx-orchestrate.apps.mycluster.example.com"
+            serviceVersion:
+              title: "WXO Installed Version"
+              type: string
+              description: >
+                The installed watsonx Orchestrate version on this cluster.
+                Example: 5.1.0
+              ui:placeholder: "5.1.0"
+      steps:
+        - id: register
+          name: "Add to Catalog"
+          action: catalog:write
+          input:
+            entity:
+              apiVersion: backstage.io/v1alpha1
+              kind: Component
+              metadata:
+                name: ${{`{{ 'fusion-wxo-' ~ parameters.clusterName }}`}}
+                title: ${{`{{ 'IBM watsonx Orchestrate — ' ~ parameters.clusterName }}`}}
+                description: ${{`{{ 'IBM watsonx Orchestrate instance on ' ~ parameters.clusterName ~ '. AI agent orchestration platform.' }}`}}
+                tags:
+                  - fusion
+                  - wxo
+                  - watsonx
+                  - orchestrate
+                  - ai
+                  - agents
+                  - ibm-fusion
+                annotations:
+                  fusion.ibm.com/cluster-id: ${{`{{ parameters.clusterName }}`}}
+                  fusion.ibm.com/service-type: wxo
+                  fusion.ibm.com/service-version: ${{`{{ parameters.serviceVersion }}`}}
+                  fusion.ibm.com/wxo-url: ${{`{{ parameters.wxoUrl }}`}}
+                  fusion.ibm.com/wxo-api-url: ${{`{{ parameters.wxoUrl ~ '/api/v1' }}`}}
+                  fusion.ibm.com/wxo-agents-url: ${{`{{ parameters.wxoUrl ~ '/agents' }}`}}
+                links:
+                  - url: ${{`{{ parameters.wxoUrl }}`}}
+                    title: "WXO UI"
+                    icon: dashboard
+                  - url: ${{`{{ parameters.wxoUrl ~ '/agents' }}`}}
+                    title: "Agent Builder"
+                    icon: extension
+                  - url: ${{`{{ parameters.wxoUrl ~ '/api/v1' }}`}}
+                    title: "API Endpoint"
+                    icon: code
+                  - url: https://www.ibm.com/docs/en/watsonx/watson-orchestrate/current
+                    title: "IBM Docs"
+                    icon: article
+              spec:
+                type: fusion-service
+                lifecycle: production
+                owner: group:default/fusion-team
+                system: fusion-ai-services
+      output:
+        text:
+          - title: "watsonx Orchestrate Registered ✅"
+            content: |
+              ## IBM watsonx Orchestrate — `${{`{{ parameters.clusterName }}`}}`
+
+              Your WXO instance is now visible in the Developer Hub catalog.
+
+              ---
+
+              ## Endpoints
+
+              | Resource | URL |
+              |---|---|
+              | WXO UI | ${{`{{ parameters.wxoUrl }}`}} |
+              | Agent Builder | ${{`{{ parameters.wxoUrl ~ '/agents' }}`}} |
+              | API | ${{`{{ parameters.wxoUrl ~ '/api/v1' }}`}} |
+
+              ---
+
+              ## Resources
+
+              - [IBM Docs — watsonx Orchestrate](https://www.ibm.com/docs/en/watsonx/watson-orchestrate/current)
+              - [watsonx Orchestrate Developer Hub](https://developer.watson-orchestrate.ibm.com/)
+              - [Deploy WXO on Fusion HCI](https://www.ibm.com/docs/en/fusion-hci-systems/2.13.x?topic=services-software-hub)
+
+              > To remove: open the component in the catalog → three-dot menu (**⋮**) → **Unregister entity**.
+        links:
+          - title: "View in Catalog"
+            url: ${{`{{ '/catalog/default/component/fusion-wxo-' ~ parameters.clusterName }}`}}
+            icon: catalog
+          - title: "WXO UI"
+            url: ${{`{{ parameters.wxoUrl }}`}}
+            icon: dashboard
+          - title: "Agent Builder"
+            url: ${{`{{ parameters.wxoUrl ~ '/agents' }}`}}
+            icon: extension
+
 {{- end }}
 
 # Made with Bob

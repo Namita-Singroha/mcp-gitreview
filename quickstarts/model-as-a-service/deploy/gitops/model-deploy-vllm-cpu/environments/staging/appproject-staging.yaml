@@ -12,7 +12,7 @@ spec:
   description: vLLM CPU Model Deploy – Staging Environment
 
   sourceRepos:
-    - 'https://github.com/IBM/storage-fusion.git'
+    - 'https://github.ibm.com/ProjectAbell/Fusion-AI.git'
 
   destinations:
     - namespace: '*'

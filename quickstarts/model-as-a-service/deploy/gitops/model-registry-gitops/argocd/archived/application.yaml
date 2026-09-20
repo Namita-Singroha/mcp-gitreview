@@ -11,9 +11,9 @@ spec:
   project: default
   
   source:
-    repoURL: https://github.com/IBM/storage-fusion.git
-    targetRevision: master
-    path: AI/quickstarts/model-as-a-service/deploy/helm/maas-model-registry
+    repoURL: https://github.ibm.com/ProjectAbell/Fusion-AI.git
+    targetRevision: main
+    path: quickstarts/model-as-a-service/deploy/helm/maas-model-registry
     
     # Use Helm to deploy with values from file
     helm:

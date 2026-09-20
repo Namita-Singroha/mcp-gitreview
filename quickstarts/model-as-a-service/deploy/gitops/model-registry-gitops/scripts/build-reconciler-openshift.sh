@@ -14,8 +14,8 @@ NC='\033[0m'
 # Configuration
 NAMESPACE="${NAMESPACE:-model-registry-gitops}"
 IMAGE_NAME="model-reconciler"
-GIT_REPO="${GIT_REPO:-https://github.com/IBM/storage-fusion}"
-GIT_REF="${GIT_REF:-master}"
+GIT_REPO="${GIT_REPO:-https://github.ibm.com/ProjectAbell/Fusion-AI}"
+GIT_REF="${GIT_REF:-main}"
 
 echo -e "${BLUE}========================================${NC}"
 echo -e "${BLUE}Build Reconciler with OpenShift${NC}"

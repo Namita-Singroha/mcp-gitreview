@@ -283,7 +283,7 @@ For questions or issues with version management:
 
 ## 📚 Related Documentation
 
-- [MaaS Operators Guide](../docs/01-setup/MAAS_OPERATORS_GUIDE.md)
-- [MaaS Platform Customization](../docs/01-setup/MAAS_PLATFORM_CUSTOMIZATION_GUIDE.md)
-- [MaaS Runtime Customization](../docs/01-setup/MAAS_RUNTIME_CUSTOMIZATION_GUIDE.md)
-- [Deployment Order](../docs/01-setup/DEPLOYMENT_ORDER.md)
+- [MaaS Operators Guide](https://github.ibm.com/ProjectAbell/Fusion-AI/blob/main/quickstarts/model-as-a-service/deploy/docs/01-setup/MAAS_OPERATORS_GUIDE.md)
+- [MaaS Platform Customization](https://github.ibm.com/ProjectAbell/Fusion-AI/blob/main/quickstarts/model-as-a-service/deploy/docs/01-setup/MAAS_PLATFORM_CUSTOMIZATION_GUIDE.md)
+- [MaaS Runtime Customization](https://github.ibm.com/ProjectAbell/Fusion-AI/blob/main/quickstarts/model-as-a-service/deploy/docs/01-setup/MAAS_RUNTIME_CUSTOMIZATION_GUIDE.md)
+- [Deployment Order](https://github.ibm.com/ProjectAbell/Fusion-AI/blob/main/quickstarts/model-as-a-service/deploy/docs/01-setup/DEPLOYMENT_ORDER.md)
