@@ -1,0 +1,9 @@
+site_name: IBM Fusion AI Services
+site_description: Getting started guide for IBM Fusion AI Services — CAS, DCS, and watsonx Orchestrate. How to register your service and connect your AI tools.
+docs_dir: docs
+
+nav:
+  - Getting Started: index.md
+
+plugins:
+  - techdocs-core
