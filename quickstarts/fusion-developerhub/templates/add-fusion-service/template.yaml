@@ -205,19 +205,19 @@ spec:
           - [ ] You have write access to your GitOps branch
           - [ ] ArgoCD app is syncing from that branch
           ${{ "- [ ] SA tokens Secret exists and is listed under `extraEnvs.secrets`" if parameters.clusterType == "self-hosted" else "" }}
-          ${{ "- [ ] WXO URL is reachable: " + parameters.wxoUrl if parameters.wxoEnabled else "" }}
+          ${{ "- [ ] WXO URL is reachable: " + parameters.wxoUrl if parameters.wxoEnabled == true else "" }}
 
       - title: "Step 1 — Copy this snippet into values.yaml"
         content: |
           **File:** `quickstarts/fusion-developerhub/deploy/helm/environments/<your-env>/values.yaml`
 
-          ${{ "Add under `fusionServices.clusters:`" if not parameters.clusterExists else "Find your existing `" + parameters.clusterName + "` block and add the missing service(s) under `services:`" }}
+          ${{ "Add under `fusionServices.clusters:`" if parameters.clusterExists == false else "Find your existing `" + parameters.clusterName + "` block and add the missing service(s) under `services:`" }}
 
           ```yaml
-          ${{ "- name: " + parameters.clusterName + "\n  ocpApiUrl: \"" + (parameters.ocpApiUrl | default("")) + "\"\n  clusterType: " + parameters.clusterType + "\n  services:" if not parameters.clusterExists else "# inside existing " + parameters.clusterName + " block, under services:" }}
-          ${{ "    cas:\n      enabled: true\n      version: \"" + (parameters.casVersion | default("")) + "\"\n      namespace: " + (parameters.casNamespace | default("ibm-cas")) + ("\n      k8s:\n        tokenEnvVar: " + parameters.casSaTokenEnvVar + "\n        labelSelector: \"" + (parameters.casSaLabelSelector | default("app.kubernetes.io/name=cas.isf.ibm.com")) + "\"" if parameters.clusterType == "self-hosted" and parameters.casSaTokenEnvVar else "") if parameters.casEnabled else "" }}
-          ${{ "    dcs:\n      enabled: true\n      version: \"" + (parameters.dcsVersion | default("")) + "\"\n      namespace: " + (parameters.dcsNamespace | default("ibm-data-cataloging")) + ("\n      k8s:\n        tokenEnvVar: " + parameters.dcsSaTokenEnvVar + "\n        labelSelector: \"" + (parameters.dcsSaLabelSelector | default("app=isd,component=discover")) + "\"" if parameters.clusterType == "self-hosted" and parameters.dcsSaTokenEnvVar else "") if parameters.dcsEnabled else "" }}
-          ${{ "    wxo:\n      enabled: true\n      wxoUrl: \"" + (parameters.wxoUrl | default("")) + "\"\n      namespace: " + (parameters.wxoNamespace | default("watson-orchestrate")) + "\n      version: \"" + (parameters.wxoVersion | default("")) + "\"" if parameters.wxoEnabled else "" }}
+          ${{ "- name: " + parameters.clusterName + "\n  ocpApiUrl: \"" + (parameters.ocpApiUrl | default("")) + "\"\n  clusterType: " + parameters.clusterType + "\n  services:" if parameters.clusterExists == false else "# inside existing " + parameters.clusterName + " block, under services:" }}
+          ${{ "    cas:\n      enabled: true\n      version: \"" + (parameters.casVersion | default("")) + "\"\n      namespace: " + (parameters.casNamespace | default("ibm-cas")) + ("\n      k8s:\n        tokenEnvVar: " + parameters.casSaTokenEnvVar + "\n        labelSelector: \"" + (parameters.casSaLabelSelector | default("app.kubernetes.io/name=cas.isf.ibm.com")) + "\"" if parameters.clusterType == "self-hosted" and parameters.casSaTokenEnvVar else "") if parameters.casEnabled == true else "" }}
+          ${{ "    dcs:\n      enabled: true\n      version: \"" + (parameters.dcsVersion | default("")) + "\"\n      namespace: " + (parameters.dcsNamespace | default("ibm-data-cataloging")) + ("\n      k8s:\n        tokenEnvVar: " + parameters.dcsSaTokenEnvVar + "\n        labelSelector: \"" + (parameters.dcsSaLabelSelector | default("app=isd,component=discover")) + "\"" if parameters.clusterType == "self-hosted" and parameters.dcsSaTokenEnvVar else "") if parameters.dcsEnabled == true else "" }}
+          ${{ "    wxo:\n      enabled: true\n      wxoUrl: \"" + (parameters.wxoUrl | default("")) + "\"\n      namespace: " + (parameters.wxoNamespace | default("watson-orchestrate")) + "\n      version: \"" + (parameters.wxoVersion | default("")) + "\"" if parameters.wxoEnabled == true else "" }}
           ```
 
       - title: "Step 2 — Push and sync"
@@ -234,12 +234,12 @@ spec:
 
       - title: "Step 3 — Verify (~3 min after sync)"
         content: |
-          ${{ "- [CAS Component](/catalog/default/component/fusion-cas-" + parameters.clusterName + ")" if parameters.casEnabled else "" }}
-          ${{ "- [CAS MCP API](/catalog/default/api/fusion-cas-mcp-api-" + parameters.clusterName + ")" if parameters.casEnabled else "" }}
-          ${{ "- [DCS Component](/catalog/default/component/fusion-dcs-" + parameters.clusterName + ")" if parameters.dcsEnabled else "" }}
-          ${{ "- [DCS MCP API](/catalog/default/api/fusion-dcs-mcp-api-" + parameters.clusterName + ")" if parameters.dcsEnabled else "" }}
-          ${{ "- [WXO Component](/catalog/default/component/wxo-" + parameters.clusterName + ")" if parameters.wxoEnabled else "" }}
-          ${{ "- [System](/catalog/default/system/fusion-" + parameters.clusterName + ")" if parameters.casEnabled or parameters.dcsEnabled else "" }}
+          ${{ "- [CAS Component](/catalog/default/component/fusion-cas-" + parameters.clusterName + ")" if parameters.casEnabled == true else "" }}
+          ${{ "- [CAS MCP API](/catalog/default/api/fusion-cas-mcp-api-" + parameters.clusterName + ")" if parameters.casEnabled == true else "" }}
+          ${{ "- [DCS Component](/catalog/default/component/fusion-dcs-" + parameters.clusterName + ")" if parameters.dcsEnabled == true else "" }}
+          ${{ "- [DCS MCP API](/catalog/default/api/fusion-dcs-mcp-api-" + parameters.clusterName + ")" if parameters.dcsEnabled == true else "" }}
+          ${{ "- [WXO Component](/catalog/default/component/wxo-" + parameters.clusterName + ")" if parameters.wxoEnabled == true else "" }}
+          ${{ "- [System](/catalog/default/system/fusion-" + parameters.clusterName + ")" if parameters.casEnabled == true or parameters.dcsEnabled == true else "" }}
 
           If entities don't appear after 5 min:
           ```bash
