@@ -1,0 +1,250 @@
+# =============================================================================
+# EXPERIMENTAL — add-fusion-service
+#
+# Snippet generator — no catalog:write, no PR, no broken steps.
+# User fills the form → copies the pre-filled values.yaml snippet → pushes.
+# ArgoCD syncs → catalog entities appear in ~3 min.
+#
+# Remove this file if the approach is superseded.
+# Production home: storage-fusion or ProjectAbell/Fusion-AI (same as other templates)
+# =============================================================================
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: add-fusion-service
+  title: "Register IBM Fusion Cluster Services"
+  description: >
+    Generate the exact values.yaml snippet to register CAS, DCS, and/or
+    watsonx Orchestrate from any IBM Fusion HCI cluster into Developer Hub.
+    Fill the form → copy the snippet → push → entities appear in ~3 min.
+    No Git actions. No tokens needed.
+  tags:
+    - fusion
+    - cas
+    - dcs
+    - wxo
+    - self-service
+    - ibm-fusion
+  annotations:
+    backstage.io/source-location: "url:https://github.com/Namita-Singroha/mcp-gitreview/tree/main/quickstarts/fusion-developerhub/templates/add-fusion-service"
+spec:
+  owner: group:default/fusion-platform-team
+  type: infrastructure
+
+  parameters:
+
+    # ── Page 1: Cluster ─────────────────────────────────────────────────────
+    - title: "Cluster"
+      required:
+        - clusterName
+        - clusterType
+        - clusterExists
+      properties:
+
+        clusterName:
+          title: "Cluster Name"
+          type: string
+          description: >
+            Short lowercase id — letters, numbers, hyphens only.
+            Used as the entity name suffix. Must be unique across clusters.
+          pattern: "^[a-z][a-z0-9-]*$"
+          ui:autofocus: true
+          ui:placeholder: "prod-east"
+
+        ocpApiUrl:
+          title: "OCP API URL"
+          type: string
+          description: >
+            From your oc login output. Example: https://api.prod-east.example.com:6443
+            All CAS and DCS route URLs are auto-derived from this.
+            Leave blank for proxy-only clusters with no direct OCP access.
+          ui:placeholder: "https://api.prod-east.example.com:6443"
+
+        clusterType:
+          title: "Cluster Type"
+          type: string
+          default: "proxy-only"
+          enum:
+            - "proxy-only"
+            - "self-hosted"
+          enumNames:
+            - "Proxy Only — no cluster access needed (recommended)"
+            - "Self-Hosted — enables Kubernetes tab, requires SA token setup"
+
+        clusterExists:
+          title: "Does this cluster already exist in values.yaml?"
+          type: boolean
+          default: false
+          ui:widget: "radio"
+          enumNames:
+            - "No — new cluster entry"
+            - "Yes — cluster exists, adding a new service to it"
+
+    # ── Page 2: Services ────────────────────────────────────────────────────
+    - title: "Services"
+      description: >
+        Enable only what is actually installed. Disabled services are excluded
+        from the snippet entirely.
+      properties:
+
+        casEnabled:
+          title: "Content Aware Storage (CAS)"
+          type: boolean
+          default: false
+          ui:widget: "radio"
+          enumNames:
+            - "Not installed"
+            - "Installed — add to catalog"
+
+        casVersion:
+          title: "CAS Version"
+          type: string
+          description: "oc get casinstall -n ibm-cas -o jsonpath='{.items[0].status.installedVersion}'"
+          ui:placeholder: "1.1.5"
+
+        casNamespace:
+          title: "CAS Namespace"
+          type: string
+          default: "ibm-cas"
+
+        dcsEnabled:
+          title: "Data Cataloging Service (DCS)"
+          type: boolean
+          default: false
+          ui:widget: "radio"
+          enumNames:
+            - "Not installed"
+            - "Installed — add to catalog"
+
+        dcsVersion:
+          title: "DCS Version"
+          type: string
+          description: "oc get spectrumDiscover -n ibm-data-cataloging -o jsonpath='{.items[0].status.installedVersion}'"
+          ui:placeholder: "2.5.3"
+
+        dcsNamespace:
+          title: "DCS Namespace"
+          type: string
+          default: "ibm-data-cataloging"
+
+        wxoEnabled:
+          title: "watsonx Orchestrate (WXO)"
+          type: boolean
+          default: false
+          ui:widget: "radio"
+          enumNames:
+            - "Not installed"
+            - "Installed — add to catalog"
+
+        wxoUrl:
+          title: "WXO UI URL"
+          type: string
+          description: "Required when WXO enabled. No auto-derivation. Example: https://wxo.apps.prod-east.example.com"
+          ui:placeholder: "https://wxo.apps.prod-east.example.com"
+
+        wxoNamespace:
+          title: "WXO Namespace"
+          type: string
+          default: "watson-orchestrate"
+
+        wxoVersion:
+          title: "WXO Version"
+          type: string
+          ui:placeholder: "2.1.0"
+
+    # ── Page 3: Self-Hosted K8s tokens (skip if proxy-only) ─────────────────
+    - title: "Kubernetes Plugin (self-hosted only)"
+      description: >
+        Skip this page if you selected Proxy Only.
+        SA tokens must already exist in a Kubernetes Secret referenced under
+        extraEnvs.secrets in values.yaml before you push.
+      properties:
+
+        dcsSaTokenEnvVar:
+          title: "DCS SA Token env var"
+          type: string
+          description: >
+            Key in your Secret for the DCS ServiceAccount token.
+            Convention: FUSION_<CLUSTER_NAME_UPPER>_SA_TOKEN
+            (uppercase, hyphens → underscores. e.g. prod-east → FUSION_PROD_EAST_SA_TOKEN)
+          ui:placeholder: "FUSION_PROD_EAST_SA_TOKEN"
+
+        dcsSaLabelSelector:
+          title: "DCS Pod Label Selector"
+          type: string
+          description: "Verify: oc get pods -n ibm-data-cataloging --show-labels"
+          default: "app=isd,component=discover"
+
+        casSaTokenEnvVar:
+          title: "CAS SA Token env var"
+          type: string
+          description: "Convention: FUSION_<CLUSTER_NAME_UPPER>_CAS_SA_TOKEN"
+          ui:placeholder: "FUSION_PROD_EAST_CAS_SA_TOKEN"
+
+        casSaLabelSelector:
+          title: "CAS Pod Label Selector"
+          type: string
+          description: "Verify: oc get pods -n ibm-cas --show-labels"
+          default: "app.kubernetes.io/name=cas.isf.ibm.com"
+
+  # ── Step ───────────────────────────────────────────────────────────────────
+  steps:
+    - id: log
+      name: "Generate snippet"
+      action: debug:log
+      input:
+        message: "Snippet generated for '${{ parameters.clusterName }}'. See the output page."
+
+  # ── Output ─────────────────────────────────────────────────────────────────
+  output:
+    text:
+
+      - title: "Before you start"
+        content: |
+          - [ ] `fusionServices.enabled: true` is set in your values.yaml
+          - [ ] You have write access to your GitOps branch
+          - [ ] ArgoCD app is syncing from that branch
+          ${{ "- [ ] SA tokens Secret exists and is listed under `extraEnvs.secrets`" if parameters.clusterType == "self-hosted" else "" }}
+          ${{ "- [ ] WXO URL is reachable: " + parameters.wxoUrl if parameters.wxoEnabled else "" }}
+
+      - title: "Step 1 — Copy this snippet into values.yaml"
+        content: |
+          **File:** `quickstarts/fusion-developerhub/deploy/helm/environments/<your-env>/values.yaml`
+
+          ${{ "Add under `fusionServices.clusters:`" if not parameters.clusterExists else "Find your existing `" + parameters.clusterName + "` block and add the missing service(s) under `services:`" }}
+
+          ```yaml
+          ${{ "- name: " + parameters.clusterName + "\n  ocpApiUrl: \"" + (parameters.ocpApiUrl | default("")) + "\"\n  clusterType: " + parameters.clusterType + "\n  services:" if not parameters.clusterExists else "# inside existing " + parameters.clusterName + " block, under services:" }}
+          ${{ "    cas:\n      enabled: true\n      version: \"" + (parameters.casVersion | default("")) + "\"\n      namespace: " + (parameters.casNamespace | default("ibm-cas")) + ("\n      k8s:\n        tokenEnvVar: " + parameters.casSaTokenEnvVar + "\n        labelSelector: \"" + (parameters.casSaLabelSelector | default("app.kubernetes.io/name=cas.isf.ibm.com")) + "\"" if parameters.clusterType == "self-hosted" and parameters.casSaTokenEnvVar else "") if parameters.casEnabled else "" }}
+          ${{ "    dcs:\n      enabled: true\n      version: \"" + (parameters.dcsVersion | default("")) + "\"\n      namespace: " + (parameters.dcsNamespace | default("ibm-data-cataloging")) + ("\n      k8s:\n        tokenEnvVar: " + parameters.dcsSaTokenEnvVar + "\n        labelSelector: \"" + (parameters.dcsSaLabelSelector | default("app=isd,component=discover")) + "\"" if parameters.clusterType == "self-hosted" and parameters.dcsSaTokenEnvVar else "") if parameters.dcsEnabled else "" }}
+          ${{ "    wxo:\n      enabled: true\n      wxoUrl: \"" + (parameters.wxoUrl | default("")) + "\"\n      namespace: " + (parameters.wxoNamespace | default("watson-orchestrate")) + "\n      version: \"" + (parameters.wxoVersion | default("")) + "\"" if parameters.wxoEnabled else "" }}
+          ```
+
+      - title: "Step 2 — Push and sync"
+        content: |
+          ```bash
+          git add quickstarts/fusion-developerhub/deploy/helm/environments/<your-env>/values.yaml
+          git commit -m "feat: register ${{ parameters.clusterName }} fusion services"
+          git push
+
+          oc patch applications.argoproj.io <your-app-name> -n openshift-gitops \
+            --type merge \
+            -p '{"operation":{"initiatedBy":{"username":"cli"},"sync":{"prune":true}}}'
+          ```
+
+      - title: "Step 3 — Verify (~3 min after sync)"
+        content: |
+          ${{ "- [CAS Component](/catalog/default/component/fusion-cas-" + parameters.clusterName + ")" if parameters.casEnabled else "" }}
+          ${{ "- [CAS MCP API](/catalog/default/api/fusion-cas-mcp-api-" + parameters.clusterName + ")" if parameters.casEnabled else "" }}
+          ${{ "- [DCS Component](/catalog/default/component/fusion-dcs-" + parameters.clusterName + ")" if parameters.dcsEnabled else "" }}
+          ${{ "- [DCS MCP API](/catalog/default/api/fusion-dcs-mcp-api-" + parameters.clusterName + ")" if parameters.dcsEnabled else "" }}
+          ${{ "- [WXO Component](/catalog/default/component/wxo-" + parameters.clusterName + ")" if parameters.wxoEnabled else "" }}
+          ${{ "- [System](/catalog/default/system/fusion-" + parameters.clusterName + ")" if parameters.casEnabled or parameters.dcsEnabled else "" }}
+
+          If entities don't appear after 5 min:
+          ```bash
+          oc get cm fusion-ai-clusters -n <namespace> \
+            -o go-template='{{`{{range $k,$v := .data}}{{$k}}{{"\n"}}{{end}}`}}'
+          ```
+
+# Made with Bob
