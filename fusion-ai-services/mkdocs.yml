@@ -4,6 +4,7 @@ docs_dir: docs
 
 nav:
   - Getting Started: index.md
+  - Platform Engineer Guide: platform.md
 
 plugins:
   - techdocs-core
