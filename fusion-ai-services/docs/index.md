@@ -1,176 +1,200 @@
-# IBM Fusion AI Services — Getting Started
+# Explore the Developer Hub
 
-**Who this is for:** Developers and data scientists who want to discover and use
-IBM Fusion AI Services — Content Aware Storage (CAS), Data Cataloging Service (DCS),
-or watsonx Orchestrate (WXO) — from this Developer Hub.
-
-**Time:** 5–10 minutes.
-
-**What you need:** Access to this Developer Hub. That's it.
-
----
-
-## What is IBM Fusion?
-
-IBM Fusion is an enterprise software platform that runs on Red Hat OpenShift —
-on your organisation's own infrastructure, on-premises or in a private cloud.
-It is not a hosted cloud service. Your data stays on your infrastructure.
-
-Fusion bundles storage, data services, and AI-ready integrations as native
-OpenShift capabilities. The services you can discover and use from this
-Developer Hub are a subset of what Fusion offers. For the full picture,
-see the [IBM Fusion Knowledge Center](https://www.ibm.com/docs/en/fusion-software).
-
-### Services available here
-
-| Service | What it does |
-|---|---|
-| **CAS** — Content Aware Storage | Stores, indexes, and semantically searches unstructured data — documents, images, files — directly on your cluster. Exposes a REST API and an MCP server for AI tooling. |
-| **DCS** — Data Cataloging Service | Discovers, classifies, tags, and governs data assets across connected storage systems. Exposes a REST API and an MCP server. |
-| **WXO** — watsonx Orchestrate | AI agent platform deployed on OpenShift via Fusion Software Hub. Lets you build and run AI agents that can use CAS and DCS as data sources. |
-
-Not every cluster has all three services installed. What appears in this
-Developer Hub depends on what your platform team has registered.
+> **This handbook has three sections — choose what you need:**
+>
+> | | Section | Go here if... |
+> |---|---|---|
+> | 🔭 | **Explore the Developer Hub** ← you are here | You're new here and want to know what this portal offers and where to find things |
+> | ✅ | [Using Fusion AI Services](using-fusion-ai-services.md) | You want to find, access, or connect to a CAS / DCS / WXO service |
+> | ⚙️ | [Managing the Catalog](managing-the-catalog.md) | You're a platform engineer registering clusters or extending the hub |
 
 ---
 
-## Step 1 — Check what's already available
+## What is this portal?
 
-Before doing anything, look at the homepage. The **Quick Access** section under
-**Fusion AI Services** shows you instantly what is registered:
+**IBM Fusion Developer Hub** is an internal developer portal built on Red Hat
+Developer Hub (Backstage). It gives every developer on your team a single place
+to discover platform services, access documentation, run self-service workflows,
+and find learning resources — without needing cluster access or hunting for URLs.
 
-- **Access CAS MCP** — at least one CAS cluster is registered and ready to use
-- **Access DCS MCP** — at least one DCS cluster is registered and ready to use
-- **watsonx Orchestrate** — at least one WXO instance is registered
-
-If those tiles are there, your services are already registered.
-**Click the tile and skip to [Step 2 — Use a service](#step-2--use-a-service).**
-
-If the tiles are not there, your cluster may not be registered yet.
-Search the catalog to confirm:
-
-👉 [Browse registered Fusion AI Services](/catalog?filters%5Bkind%5D=component&filters%5Btype%5D=fusion-service)
-
-Type your cluster name in the search box (e.g. `prod-east`, `mycluster`).
-
-- **Found it?** → Skip to [Step 2 — Use a service](#step-2--use-a-service)
-- **Not found?** → Your cluster isn't registered yet. Check with your cluster
-  administrator to confirm which services are installed, then ask your platform
-  engineer to register it — or see the
-  [Platform Engineer Guide](platform.md) if that's you.
+This page is a map of everything available. Read it once, then use the nav on
+the left to jump to any section.
 
 ---
 
-## Step 2 — Use a service
+## Homepage
 
-**From the homepage** (easiest)
+The homepage is your starting point. It has a **Quick Access** panel on the
+right with several sections. What appears in each section depends on what your
+platform team has enabled.
 
-The **Quick Access** section under **Fusion AI Services** shows only the services
-that are actually registered. If you see **Access CAS MCP**, **Access DCS MCP**,
-or **watsonx Orchestrate** tiles — click one. It takes you straight to a filtered
-catalog view listing all registered instances of that service across every cluster.
-Pick your cluster from the list.
+### Blueprints & Quickstarts
 
-**From the catalog**
+Pre-built solution patterns and step-by-step guides to get started with common
+workloads on IBM Fusion.
 
-If you want to browse everything at once:
-
-👉 [Browse all registered Fusion AI Services](/catalog?filters%5Bkind%5D=component&filters%5Btype%5D=fusion-service)
-
-You'll see one entry per registered service per cluster. Click the one you need.
-
-Once you're on the component page, go to the **Links** tab.
-Every endpoint is pre-filled — no cluster login, no VPN, no `oc` commands needed.
-
-### What you'll find in the Links tab
-
-**For CAS:**
-
-| Link | What it is |
+| Tile | What it leads to |
 |---|---|
-| CAS Console | The CAS web UI — browse vector stores, monitor jobs |
-| Swagger UI | Interactive REST API explorer — try calls directly in the browser |
-| MCP (Streamable) | MCP server endpoint for SSE-based AI tools |
-| MCP (Standard) | MCP server endpoint for JSON-RPC 2.0 AI tools |
-| Health | Health check URL — confirm the service is responding |
-| OCP Console | OpenShift console for this cluster |
+| Browse NVIDIA Blueprints | Catalog of NVIDIA AI blueprint solutions validated on Fusion |
+| Browse Fusion Quickstarts | IBM Fusion quickstart guides in the catalog |
+| Browse Red Hat Quickstarts | Red Hat AI learning quickstarts (external link) |
 
-**For DCS:**
+### AI & Platform Services
 
-| Link | What it is |
+Self-service capabilities for AI and platform workloads on Fusion.
+
+| Tile | What it leads to |
 |---|---|
-| DCS Console | The Spectrum Discover web UI |
-| MCP Endpoint | MCP server endpoint for AI tools |
-| MCP HTTP Endpoint | HTTP transport variant |
-| MCP SSE Endpoint | SSE transport variant |
-| Health | Health check URL |
+| Deploy a Model on Fusion | Quickstart guide: Model-as-a-Service (MaaS) on Fusion with GitOps |
+| View Deployed Models | Catalog of AI models currently deployed via OpenShift AI |
+| Explore All MaaS Tutorials | Learning Paths — full list of MaaS and AI tutorials |
+| Explore Self-Service Namespace | Namespace-as-a-Service quickstart guide |
 
-**For WXO:**
+### Fusion AI Services _(appears only when services are registered)_
 
-| Link | What it is |
+Links to IBM Fusion AI Services registered in this hub. These tiles only appear
+when at least one instance of that service has been registered by your platform team.
+
+| Tile | What it leads to |
 |---|---|
-| WXO UI | The watsonx Orchestrate interface for this instance |
-| IBM Docs | watsonx Orchestrate product documentation |
-| ADK | Agent Developer Kit — build agents that use CAS/DCS as tools |
+| Access CAS MCP | Catalog entries for all registered CAS clusters — get MCP endpoint and API links |
+| Access DCS MCP | Catalog entries for all registered DCS clusters — get MCP endpoint and API links |
+| watsonx Orchestrate | Catalog entries for all registered WXO instances |
+
+If none of these tiles appear, no Fusion AI Services have been registered yet.
+See [Using Fusion AI Services](using-fusion-ai-services.md) or ask your platform team.
+
+### Documentation
+
+Direct links to IBM product documentation.
+
+| Tile | What it leads to |
+|---|---|
+| Fusion HCI Knowledge Center | IBM Docs for Fusion HCI Systems |
+| Fusion SDS Knowledge Center | IBM Docs for Fusion Software-Defined Storage |
+
+### Resources & Community
+
+| Tile | What it leads to |
+|---|---|
+| Fusion Tech Community | IBM Fusion AI community site |
+| IBM Tech Exchange | IBM community blogs and resources |
 
 ---
 
-## Step 3 — Connect your AI tool via MCP
+## Catalog
 
-CAS and DCS each expose an MCP (Model Context Protocol) server. MCP is an open
-standard that lets AI tools — agents, assistants, IDEs — call data operations
-as native tools without custom integration code.
+The catalog (`/catalog`) is the central registry of everything known to this
+Developer Hub — services, APIs, documentation, and templates.
 
-Copy the MCP endpoint from the **Links** tab of the catalog component and
-configure it in your AI tool. MCP is one way to use these services — direct
-REST API calls via the Swagger UI or programmatic HTTP are equally valid.
+**Filter by Kind** in the left panel to find what you need:
 
-### CAS MCP tools
-
-Once connected, your AI tool can call:
-
-| Tool | What it does |
+| Kind | What it contains |
 |---|---|
-| `list_vector_stores` | List all vector stores on this CAS instance |
-| `search_vector_stores` | Semantic search across stored documents, files, and images |
-| `get_vector_store_file_content` | Retrieve the content of a file from a search result |
+| **Component** | Registered services: Fusion AI services (CAS, DCS, WXO), blueprints, quickstarts, documentation components |
+| **API** | OpenAPI specs for CAS and DCS REST APIs |
+| **Resource** | AI models deployed via OpenShift AI / RHOAI |
+| **Template** | Self-service scaffolding templates (see Create section) |
+| **System** | `fusion-ai-services` — groups all Fusion AI service components |
+| **Domain** | `IBM Fusion AI Services` — top-level grouping for all Fusion services |
+| **Group** | Platform teams: `fusion-platform-team`, `fusion-team` |
 
-📖 [CAS MCP Integration — IBM Docs](https://www.ibm.com/docs/en/fusion-software/2.13.0?topic=cas-integrating-model-context-protocol-mcp)
-· [CAS + watsonx Orchestrate via MCP](https://www.ibm.com/docs/en/fusion-software/2.13.0?topic=cas-integrating-watsonx-orchestrate-by-using-mcp)
-· [Blog: Bob meets IBM CAS MCP](https://community.ibm.com/community/user/blogs/namita-singroha/2026/03/24/bob-meets-ibm-cas-mcp)
+**Useful catalog searches:**
 
-### DCS MCP tools
-
-| Tool | What it does |
+| What you're looking for | Filter |
 |---|---|
-| `dcs_file_search` | Search data assets in the catalog |
-| `dcs_get_registered_tags` | List all metadata tags |
-| `dcs_get_recommend_tags` | AI-suggested tags for a dataset |
-| `dcs_create_tag` | Create a new metadata tag |
-| `dcs_create_policy` | Define a data governance policy |
-| `dcs_get_policies` | List all active governance policies |
-| `dcs_set_credentials` | Configure credentials for a data source |
-
-📖 [DCS MCP Server — IBM Docs](https://www.ibm.com/docs/en/fusion-software/2.13.0?topic=capabilities-data-cataloging-mcp-server)
-· [Blog: Explore your data catalog with NLP](https://community.ibm.com/community/user/blogs/paul-llamas-virgen/2026/03/06/exploring-your-fusion-data-catalog-with-nlp)
-· [Blog: AI Agents on WXO for DCS](https://community.ibm.com/community/user/blogs/paul-llamas-virgen/2026/03/06/create-your-ai-agents-on-wx-orch-for-data-catalog)
-
-### WXO — build agents that use CAS and DCS
-
-From the WXO catalog entry, open the **WXO UI** link and use the Agent Developer
-Kit (ADK) to build agents. You can wire CAS and DCS as MCP tool sources so your
-agents can search and govern data directly on your cluster.
-
-📖 [watsonx Orchestrate Docs](https://www.ibm.com/docs/en/watsonx/watson-orchestrate)
-· [ADK: Build an Agent](https://developer.watson-orchestrate.ibm.com/ai_builder/creating_agent)
+| All Fusion AI services (CAS, DCS, WXO) | Kind: Component, Type: fusion-service |
+| NVIDIA AI blueprints | Kind: Component, Type: blueprint |
+| Deployed AI models | Kind: Resource, Type: ai-model |
+| All documentation components | Kind: Component, Type: documentation |
 
 ---
 
-## IBM Documentation
+## Create
 
-- [IBM Fusion Knowledge Center](https://www.ibm.com/docs/en/fusion-software)
-- [IBM Fusion HCI Knowledge Center](https://www.ibm.com/docs/en/fusion-hci-systems)
-- [IBM Fusion Tech Community](https://ibm.github.io/storage-fusion/fusion-ai/overview/)
-- [CAS REST APIs](https://www.ibm.com/docs/en/fusion-software/2.13.0?topic=cas-content-aware-storage-apis)
-- [IBM Research — 100B Vector Storage for AI](https://research.ibm.com/blog/cas-100-billion-vector-storage-ai)
-- [IBM Tech Exchange — Fusion Community](https://community.ibm.com/community/user/groups/community-home/recent-community-blogs?communitykey=e596ba82-cd57-4fae-8042-163e59279ff3)
+The Create page (`/create`) lists all self-service templates available in this
+hub. Each template walks you through a form and performs an action for you.
+
+| Template | What it does | Who should use it |
+|---|---|---|
+| **Add IBM Fusion CAS Cluster** | Registers a CAS instance in the catalog with all endpoints auto-derived from the OCP API URL | Platform engineers with a CAS cluster to onboard |
+| **Add IBM Fusion DCS Cluster** | Registers a DCS instance in the catalog with all endpoints auto-derived | Platform engineers with a DCS cluster to onboard |
+| **Register watsonx Orchestrate Instance** | Registers a WXO instance in the catalog | Platform engineers with WXO installed |
+| **Namespace-as-a-Service** _(if enabled)_ | Provisions a new OpenShift namespace with RBAC and quota via GitOps | Developers requesting a dedicated namespace |
+
+> After running a template, open the catalog and find the new entry — go to its
+> **Links** tab to get all pre-filled endpoints.
+
+---
+
+## Docs
+
+The Docs section (`/docs`) renders TechDocs — Markdown documentation pulled
+directly from Git and rendered here in the portal.
+
+| Documentation | What it covers |
+|---|---|
+| **IBM Fusion AI Services** ← this handbook | Three-part guide: explore the hub, use services, manage the catalog |
+| **IBM Fusion CAS** | CAS architecture, MCP server, REST API reference, onboarding guide, troubleshooting |
+| **IBM Fusion DCS** | DCS MCP server, health check, AI agents on WXO, REST API, onboarding, troubleshooting |
+
+Click any **Docs** tab on a catalog component to open its documentation directly.
+
+---
+
+## Learning Paths
+
+The Learning Paths page (`/learning-paths`) is a curated library of tutorials
+covering AI workloads, platform services, and tooling on IBM Fusion. Each path
+links to a blog post, guide, or IBM Docs article with an estimated time.
+
+### Model-as-a-Service (MaaS)
+
+| Tutorial | Time |
+|---|---|
+| Getting started with Model-as-a-Service on Fusion | 1 hr |
+| Configure subscription-based model governance on Fusion MaaS | 45 min |
+| CPU-based LLM inference on Fusion with GitOps | 45 min |
+| Build an agentic chat assistant on Fusion AI | 1 hr |
+| Registering models from the Model Catalog | 20 min |
+
+### Namespace-as-a-Service (NaaS)
+
+| Tutorial | Time |
+|---|---|
+| Getting started with Namespace-as-a-Service on Fusion | 1 hr 30 min |
+
+### watsonx Orchestrate
+
+| Tutorial | Time |
+|---|---|
+| Building agents with the watsonx Orchestrate AI Builder | 25 min |
+| Running watsonx Orchestrate Developer Edition locally | 30 min |
+| Creating and building AI agents with the watsonx Orchestrate ADK | 30 min |
+| Deploying agents in watsonx Orchestrate | 20 min |
+| Deploying watsonx.ai and watsonx Orchestrate on Fusion HCI | 1 hr |
+
+### IBM Fusion HCI — AI Infrastructure
+
+| Tutorial | Time |
+|---|---|
+| AI workloads on IBM Fusion HCI | 25 min |
+| GPU servers and sizing on Fusion HCI | 15 min |
+
+### Developer Hub
+
+| Tutorial | Time |
+|---|---|
+| Getting started with Fusion Developer Hub | 1 hr |
+
+---
+
+## Where to go next
+
+| I want to... | Go to |
+|---|---|
+| Find and use a Fusion AI Service (CAS, DCS, WXO) | [Using Fusion AI Services](using-fusion-ai-services.md) |
+| Register a cluster or extend this hub | [Managing the Catalog](managing-the-catalog.md) |
+| Deploy a model on Fusion | Learning Paths → MaaS section |
+| Request a namespace | Create → Namespace-as-a-Service template |
+| Read CAS or DCS technical docs | Docs → IBM Fusion CAS / DCS |

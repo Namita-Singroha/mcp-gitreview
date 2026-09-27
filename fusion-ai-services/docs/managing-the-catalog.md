@@ -1,4 +1,4 @@
-# Platform Engineer Guide
+# Managing the Catalog
 
 **Who this is for:** The person who deploys and manages this Developer Hub —
 registering clusters, editing `values.yaml`, and extending the catalog for
