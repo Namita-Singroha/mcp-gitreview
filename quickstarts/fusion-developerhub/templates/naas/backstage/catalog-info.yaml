@@ -44,4 +44,4 @@ spec:
   owner: group:default/fusion-platform-team
   system: fusion-ai-services
   dependsOn:
-    - component:default/fusion-developer-hub-quickstart
+    - component:default/fusion-developerhub-quickstart

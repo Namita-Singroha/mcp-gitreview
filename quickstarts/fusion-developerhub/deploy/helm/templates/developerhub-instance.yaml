@@ -828,9 +828,7 @@ spec:
         {{- if .Values.developerHub.fusion.enabled }}
         - name: fusion-templates
         {{- end }}
-        {{- if and .Values.developerHub.fusion.ai .Values.developerHub.fusion.ai.rhoaiConnector .Values.developerHub.fusion.ai.rhoaiConnector.enabled }}
         - name: app-config-ai-templates
-        {{- end }}
         {{- if .Values.developerHub.enabled }}
         - name: app-config-fusion-blueprints
         {{- end }}
@@ -843,9 +841,21 @@ spec:
         {{- if .Values.templates.naas }}
         - name: app-config-naas
         {{- end }}
+        # ── Single source of truth for all catalog.locations ──────────────
+        # Must be last — loaded after all other configs so it owns catalog.locations.
+        # Never add catalog.locations to any other ConfigMap.
+        - name: app-config-catalog-locations
     
-    # Dynamic plugins ConfigMap — always set; fusion-dynamic-plugins is always created
+    # Dynamic plugins ConfigMap
+    # When fusionServices + dynamicPlugins are both enabled, use the fuller
+    # fusion-ai-dynamic-plugins ConfigMap (TechDocs, API Docs, Search, etc.)
+    # Otherwise fall back to the standard fusion-dynamic-plugins.
+    {{- $fusionDynPlugins := and .Values.developerHub.fusionServices .Values.developerHub.fusionServices.enabled .Values.developerHub.fusionServices.dynamicPlugins .Values.developerHub.fusionServices.dynamicPlugins.enabled }}
+    {{- if $fusionDynPlugins }}
+    dynamicPluginsConfigMapName: fusion-ai-dynamic-plugins
+    {{- else }}
     dynamicPluginsConfigMapName: fusion-dynamic-plugins
+    {{- end }}
     
     {{- if or .Values.developerHub.database.useOperator (and .Values.developerHub.extraEnvs .Values.developerHub.extraEnvs.secrets (gt (len .Values.developerHub.extraEnvs.secrets) 0)) }}
     extraEnvs:
@@ -898,6 +908,11 @@ spec:
               - name: homepage-data
                 configMap:
                   name: {{ .Values.developerHub.instanceName }}-home-quick-access
+              # ── WXO template ConfigMap — always-on (no fusionServices guard) ──
+              - name: wxo-template
+                configMap:
+                  name: wxo-template
+                  defaultMode: 0444
               {{- if and .Values.developerHub.fusionServices .Values.developerHub.fusionServices.enabled }}
               # ── Fusion AI Services entity ConfigMaps ─────────────────────────
               # Mounted as directories (no subPath) so Kubernetes auto-refreshes
@@ -1023,6 +1038,13 @@ spec:
                   - name: homepage-data
                     mountPath: /opt/app-root/src/packages/app/dist/homepage/icons/community-icon.png
                     subPath: ai-models-icon.png
+                  # Fusion AI Services section icons
+                  - name: homepage-data
+                    mountPath: /opt/app-root/src/packages/app/dist/homepage/icons/mcp-icon.svg
+                    subPath: mcp-icon.svg
+                  - name: homepage-data
+                    mountPath: /opt/app-root/src/packages/app/dist/homepage/icons/watsonx-icon.svg
+                    subPath: watsonx-icon.svg
                   {{- if and .Values.developerHub.fusionServices .Values.developerHub.fusionServices.enabled }}
                   # ── Fusion AI entity files ────────────────────────────────────
                   # Platform entities: single file, subPath is fine (static key).
@@ -1041,11 +1063,11 @@ spec:
                   - name: fusion-ai-services-templates
                     mountPath: /opt/app-root/src/add-dcs-cluster-template.yaml
                     subPath: add-dcs-cluster-template.yaml
-                  - name: fusion-ai-services-templates
-                    mountPath: /opt/app-root/src/add-wxo-instance-template.yaml
-                    subPath: add-wxo-instance-template.yaml
-
                   {{- end }}
+                  # ── WXO template — always-on (outside fusionServices block) ──
+                  - name: wxo-template
+                    mountPath: /opt/app-root/src/wxo-template.yaml
+                    subPath: wxo-template.yaml
         {{- end }}
   
   {{- if .Values.developerHub.database.useOperator }}

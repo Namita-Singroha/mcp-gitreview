@@ -187,7 +187,7 @@ developerHub:
         
         🚀 **Getting Started**
 
-        Follow the [Quickstart Guide](https://community.ibm.com/community/user/blogs/namita-singroha/2026/06/25/quickstart-fusion-developer-hub-via-gitops) to begin navigating your portal — explore the software catalog, view available blueprints, and access unified documentation.
+        New here? Open the [Developer Hub Handbook](/docs/default/component/fusion-ai-services-guide) to explore what this portal offers — the catalog, self-service templates, learning paths, and Fusion AI Services.
       
       # Quick access links (optional - defaults to Fusion quick links). Add quicklinks here if you want to override the default quicklinks. Defaults are present in dynamic-plugins.yaml file
       # Uncomment to customize:
@@ -205,6 +205,12 @@ developerHub:
       #     links:
       #       - text: "Link 1"
       #         url: "/path1"
+
+      # Learning Paths customisation
+      learningPaths:
+        enabled: true
+        githubRawBaseUrl: "https://raw.githubusercontent.com"
+        dataJsonPath: "/IBM/storage-fusion/main/AI/quickstarts/fusion-developerhub/assets/learning-paths/data.json"
 
       # OpenShift AI Model Connector (KEY FEATURE)
       plugins:
@@ -314,56 +320,44 @@ developerHub:
       enabled: true
       locations:
         # NVIDIA RAG Blueprint
-        # TODO: revert to IBM/storage-fusion once merged there
-        # Final target: https://github.com/IBM/storage-fusion/blob/master/AI/NVIDIA%20Blueprints/NVIDIA%20RAG/backstage/catalog-info.yaml
         - type: url
-          target: https://github.com/Namita-Singroha/mcp-gitreview/blob/main/NVIDIA%20Blueprints/NVIDIA%20RAG/backstage/catalog-info.yaml
+          target: https://github.com/IBM/storage-fusion/blob/master/AI/NVIDIA%20Blueprints/NVIDIA%20RAG/backstage/catalog-info.yaml
           rules:
             - allow: [Component]
 
         # NVIDIA AIQ Blueprint
-        # TODO: revert to IBM/storage-fusion once merged there
-        # Final target: https://github.com/IBM/storage-fusion/blob/master/AI/NVIDIA%20Blueprints/NVIDIA%20AIQ/backstage/catalog-info.yaml
         - type: url
-          target: https://github.com/Namita-Singroha/mcp-gitreview/blob/main/NVIDIA%20Blueprints/NVIDIA%20AIQ/backstage/catalog-info.yaml
+          target: https://github.com/IBM/storage-fusion/blob/master/AI/NVIDIA%20Blueprints/NVIDIA%20AIQ/backstage/catalog-info.yaml
           rules:
             - allow: [Component]
 
         # NVIDIA VSS Blueprint
-        # TODO: revert to IBM/storage-fusion once merged there
-        # Final target: https://github.com/IBM/storage-fusion/blob/master/AI/NVIDIA%20Blueprints/NVIDIA%20VSS/backstage/catalog-info.yaml
         - type: url
-          target: https://github.com/Namita-Singroha/mcp-gitreview/blob/main/NVIDIA%20Blueprints/NVIDIA%20VSS/backstage/catalog-info.yaml
+          target: https://github.com/IBM/storage-fusion/blob/master/AI/NVIDIA%20Blueprints/NVIDIA%20VSS/backstage/catalog-info.yaml
           rules:
             - allow: [Component]
 
         # Fusion Developer Hub Quickstart
-        # TODO: revert to IBM/storage-fusion once merged there
-        # Final target: https://github.com/IBM/storage-fusion/blob/master/AI/quickstarts/fusion-developerhub/backstage/catalog-info.yaml
         - type: url
-          target: https://github.com/Namita-Singroha/mcp-gitreview/blob/main/quickstarts/fusion-developerhub/backstage/catalog-info.yaml
+          target: https://github.com/IBM/storage-fusion/blob/master/AI/quickstarts/fusion-developerhub/backstage/catalog-info.yaml
           rules:
             - allow: [Component]
 
         # Fusion GitOps Quickstart
-        # TODO: revert to IBM/storage-fusion once merged there
-        # Final target: https://github.com/IBM/storage-fusion/blob/master/AI/quickstarts/fusion-gitops/backstage/catalog-info.yaml
         - type: url
-          target: https://github.com/Namita-Singroha/mcp-gitreview/blob/main/quickstarts/fusion-gitops/backstage/catalog-info.yaml
+          target: https://github.com/IBM/storage-fusion/blob/master/AI/quickstarts/fusion-gitops/backstage/catalog-info.yaml
           rules:
             - allow: [Component]
 
         # Model-as-a-Service Quickstart
-        # TODO: revert to IBM/storage-fusion once merged there
-        # Final target: https://github.com/IBM/storage-fusion/blob/master/AI/quickstarts/model-as-a-service/backstage/catalog-info.yaml
         - type: url
-          target: https://github.com/Namita-Singroha/mcp-gitreview/blob/main/quickstarts/model-as-a-service/backstage/catalog-info.yaml
+          target: https://github.com/IBM/storage-fusion/blob/master/AI/quickstarts/model-as-a-service/backstage/catalog-info.yaml
           rules:
             - allow: [Component]
 
-        # Namespace-as-a-Service Quickstart (TEST — mcp-gitreview, move to storage-fusion when ready)
+        # Namespace-as-a-Service Quickstart
         - type: url
-          target: https://github.com/Namita-Singroha/mcp-gitreview/blob/main/quickstarts/fusion-developerhub/templates/naas/backstage/catalog-info.yaml
+          target: https://github.com/IBM/storage-fusion/blob/master/AI/quickstarts/fusion-developerhub/templates/naas/backstage/catalog-info.yaml
           rules:
             - allow: [Component]
 
@@ -593,7 +587,7 @@ developerHub:
     # CLUSTER_ID_UPPER = uppercase(CLUSTER_ID), replace '-' with '_'
     # e.g. my-cluster-01 → MY_CLUSTER_01
     clusters:
-      # Add additional clusters below.
+      # Add your clusters below.
       # Example self-hosted cluster (has oc CLI access / ServiceAccount tokens):
       # - name: <cluster-id>
       #   ocpApiUrl: https://api.<cluster-domain>:6443
@@ -626,6 +620,12 @@ developerHub:
       #       enabled: true
       #       version: "<CAS_VERSION>"
       #       namespace: ibm-cas
+      #     # ── watsonx Orchestrate (optional — add when WXO is installed) ──
+      #     # wxo:
+      #     #   enabled: true
+      #     #   wxoUrl: "https://wxo.apps.<cluster-domain>"  # required — no auto-derivation
+      #     #   namespace: watson-orchestrate                # default shown
+      #     #   version: ""                                  # optional
 
 # OpenShift Console QuickStart Configuration
 quickstart:
